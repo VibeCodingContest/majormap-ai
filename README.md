@@ -106,6 +106,8 @@ npm run dev
 
 상세 클릭 흐름은 [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md)를 참고한다.
 
+임시 외부 공유 시 Cloudflare tunnel 테스트 절차는 [docs/TUNNEL_TEST.md](docs/TUNNEL_TEST.md)를 참고한다.
+
 ---
 
 ## 프로젝트 구조 참고 문서
