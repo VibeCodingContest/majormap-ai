@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { recommendCareers } from "@/lib/recommendation";
-import { StudentProfile } from "@/lib/types";
+import { RecommendApiResponse, StudentProfile } from "@/lib/types";
 
 export async function POST(req: Request) {
   try {
@@ -15,8 +15,11 @@ export async function POST(req: Request) {
     };
 
     const results = recommendCareers(profile);
-    return NextResponse.json({ results });
+    return NextResponse.json<RecommendApiResponse>({ results });
   } catch {
-    return NextResponse.json({ error: "서버 오류가 발생했습니다." }, { status: 500 });
+    return NextResponse.json<RecommendApiResponse>(
+      { error: "서버 오류가 발생했습니다." },
+      { status: 500 }
+    );
   }
 }

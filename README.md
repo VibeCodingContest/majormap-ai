@@ -1,6 +1,6 @@
 # MajorMap AI
 
-복수전공·심화전공 대학생이 자신의 수강 이력과 학번별 커리큘럼을 입력하면, 적합한 진로를 추천하고 부족한 역량과 보완 과목을 안내하는 AI 진로 설계 웹앱.
+MajorMap AI는 대학생의 수강 이력, 학번별 커리큘럼, 전공 조합을 바탕으로 적합한 진로를 추천하고, 선택한 진로 기준 다음 1~2개 학기 수강 계획까지 이어주는 규칙 기반 진로 설계 웹앱이다. 핵심 추천과 계획 기능은 외부 LLM 없이 동작하며, AI 설명 기능은 보조 계층으로만 사용해 제출 안정성과 해석 가능성을 함께 확보했다.
 
 ---
 
@@ -106,8 +106,17 @@ npm run dev
 
 | 문서 | 내용 |
 |---|---|
+| [docs/README.md](docs/README.md) | 현재 문서 묶음의 역할 안내 |
 | [docs/PLAN.md](docs/PLAN.md) | 문제 정의 및 해결 방향 |
-| [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md) | 발표용 데모 클릭 스크립트 |
+| [docs/PROJECT_SCOPE.md](docs/PROJECT_SCOPE.md) | MVP 범위와 제외 범위 |
+| [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md) | 현재 추천 흐름 기준 클릭 시나리오 |
+| [docs/DEMO_BLOCKERS.md](docs/DEMO_BLOCKERS.md) | 현재 데모 리스크 및 정리 기준 |
+| [docs/QA_SCENARIOS.md](docs/QA_SCENARIOS.md) | 내부 추천 QA 시나리오 |
+| [docs/PROD_QA.md](docs/PROD_QA.md) | live URL 최종 수동 점검 문서 |
+| [docs/FINAL_CHECKLIST.md](docs/FINAL_CHECKLIST.md) | 제출 직전 체크리스트 |
+| [docs/SUBMISSION_GUIDE.md](docs/SUBMISSION_GUIDE.md) | public repo / live URL / 제출물 정리 |
+| [docs/AI_REPORT_DRAFT.md](docs/AI_REPORT_DRAFT.md) | AI report PDF 원문 초안 |
+| [docs/JUDGE_ONE_PAGER.md](docs/JUDGE_ONE_PAGER.md) | 심사용 1페이지 요약 |
 | [docs/GIT_WORKFLOW.md](docs/GIT_WORKFLOW.md) | 브랜치 전략 및 협업 규칙 |
 | [docs/AI_COLLAB.md](docs/AI_COLLAB.md) | AI 협업 기록 |
 | [docs/PROMPT_LOG_TEMPLATE.md](docs/PROMPT_LOG_TEMPLATE.md) | 프롬프트 로그 양식 |

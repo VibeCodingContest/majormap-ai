@@ -2,10 +2,14 @@ export type Course = {
   id: string;
   code: string;
   name: string;
+  credits: number;
   yearTracks: string[];
+  offeredIn: "1" | "2" | "both";
+  category: "major-core" | "major-elective" | "bridge" | "liberal";
   majors: string[];
   tags: string[];
   description: string;
+  prerequisites?: string[];
 };
 
 export type Career = {
@@ -14,6 +18,9 @@ export type Career = {
   summary: string;
   requiredTags: string[];
   optionalTags: string[];
+  coreCourseIds: string[];
+  preferredMajors?: string[];
+  keywordAliases?: string[];
 };
 
 export type StudentProfile = {
@@ -28,7 +35,8 @@ export type ScoreBreakdown = {
   requiredTagScore: number;
   optionalTagScore: number;
   keywordBonus: number;
-  majorComboBonus: number;
+  primaryMajorBonus: number;
+  secondaryMajorBonus: number;
   total: number;
 };
 
@@ -37,10 +45,14 @@ export type CareerRecommendation = {
   careerName: string;
   score: number;
   summary: string;
+  reasonSummary: string;
   scoreBreakdown: ScoreBreakdown;
   matchedTags: string[];
   missingTags: string[];
+  strengthHighlights: string[];
+  gapHighlights: string[];
   reasons: string[];
+  coreMissingCourseIds: string[];
   recommendedCourseIds: string[];
 };
 
@@ -54,6 +66,65 @@ export type ExplainRequest = {
   recommendation: CareerRecommendation;
   profile: StudentProfile;
 };
+
+export type RecommendApiResponse =
+  | {
+      results: CareerRecommendation[];
+    }
+  | {
+      error: string;
+    };
+
+export type PlanRequest = StudentProfile & {
+  careerId: string;
+  targetCredits: 12 | 15 | 18;
+  semesterCount: 1 | 2;
+  includeLiberalArts: boolean;
+  nextSemester: "1" | "2";
+};
+
+export type PlanOptions = Pick<
+  PlanRequest,
+  "nextSemester" | "targetCredits" | "semesterCount" | "includeLiberalArts"
+>;
+
+export type PlannedCourse = {
+  courseId: string;
+  name: string;
+  credits: number;
+  reason: string;
+  whyNow: string;
+};
+
+export type PlannedSemester = {
+  termLabel: string;
+  totalCredits: number;
+  courses: PlannedCourse[];
+};
+
+export type DeferredCourse = {
+  courseId: string;
+  reason: string;
+};
+
+export type PlanResult = {
+  selectedCareer: {
+    careerId: string;
+    careerName: string;
+    summary: string;
+  };
+  coreMissingCourseIds: string[];
+  semesters: PlannedSemester[];
+  deferredCourses: DeferredCourse[];
+};
+
+export type PlanApiResponse =
+  | {
+      result: PlanResult;
+    }
+  | {
+      error: string;
+    };
 
 export type RoadmapPhase = {
   phase: number;
@@ -69,3 +140,9 @@ export type ExplainResponse = {
   caution: string;
   roadmap: RoadmapPhase[];
 };
+
+export type ExplainApiResponse =
+  | ExplainResponse
+  | {
+      error: string;
+    };

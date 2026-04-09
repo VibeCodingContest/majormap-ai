@@ -2,15 +2,38 @@
 
 import { useState } from "react";
 import { courseMap, skillTagLabels } from "@/lib/sample-data";
-import { CareerRecommendation, ExplainResponse, StudentProfile } from "@/lib/types";
+import {
+  CareerRecommendation,
+  ExplainApiResponse,
+  ExplainResponse,
+  StudentProfile,
+} from "@/lib/types";
 import { RoadmapPanel } from "./RoadmapPanel";
 
 type Props = {
   result: CareerRecommendation;
   profile: StudentProfile;
+  onPlanSelect: (result: CareerRecommendation) => void;
+  isPlanSelected: boolean;
 };
 
-export function ResultCard({ result, profile }: Props) {
+function isExplainResponse(value: ExplainApiResponse): value is ExplainResponse {
+  return (
+    !("error" in value) &&
+    Array.isArray(value.evidence) &&
+    Array.isArray(value.roadmap) &&
+    typeof value.headline === "string" &&
+    typeof value.fitSummary === "string" &&
+    typeof value.caution === "string"
+  );
+}
+
+export function ResultCard({
+  result,
+  profile,
+  onPlanSelect,
+  isPlanSelected,
+}: Props) {
   const [explainData, setExplainData] = useState<ExplainResponse | null>(null);
   const [explainLoading, setExplainLoading] = useState(false);
   const [explainError, setExplainError] = useState<string | null>(null);
@@ -30,26 +53,28 @@ export function ResultCard({ result, profile }: Props) {
         body: JSON.stringify({ recommendation: result, profile }),
       });
 
-      const raw = (await res.json().catch(() => null)) as unknown;
       if (!res.ok) {
-        const errorMessage =
-          raw &&
-          typeof raw === "object" &&
-          "error" in raw &&
-          typeof raw.error === "string"
-            ? raw.error
-            : "AI 해설을 불러오는 데 실패했습니다.";
-
-        setExplainError(errorMessage);
+        setExplainError("AI 해설을 불러오는 데 실패했습니다.");
         setShowPanel(false);
         return;
       }
 
-      setExplainData(raw as ExplainResponse);
+      const data = (await res.json()) as ExplainApiResponse;
+
+      if (!isExplainResponse(data)) {
+        setExplainError(
+          "explain 결과를 해석하지 못했습니다. 추천 결과만으로도 계획을 계속 진행할 수 있습니다."
+        );
+        setShowPanel(false);
+        return;
+      }
+
+      setExplainData(data);
       setShowPanel(true);
     } catch {
-      setExplainError("AI 해설을 불러오는 데 실패했습니다.");
-      setShowPanel(false);
+      setExplainError(
+        "AI 해설을 불러오는 데 실패했습니다. 추천 결과와 학기 계획은 계속 사용할 수 있습니다."
+      );
     } finally {
       setExplainLoading(false);
     }
@@ -58,13 +83,16 @@ export function ResultCard({ result, profile }: Props) {
   const recommendedCourseNames = result.recommendedCourseIds
     .map((id) => courseMap[id]?.name ?? id)
     .filter(Boolean);
+  const coreMissingCourseNames = result.coreMissingCourseIds
+    .map((id) => courseMap[id]?.name ?? id)
+    .filter(Boolean);
 
-  const matchedTagNames = result.matchedTags.map(
-    (t) => skillTagLabels[t] ?? t
-  );
-  const missingTagNames = result.missingTags.map(
-    (t) => skillTagLabels[t] ?? t
-  );
+  const matchedTagNames = result.strengthHighlights.length > 0
+    ? result.strengthHighlights
+    : result.matchedTags.map((t) => skillTagLabels[t] ?? t);
+  const missingTagNames = result.gapHighlights.length > 0
+    ? result.gapHighlights
+    : result.missingTags.map((t) => skillTagLabels[t] ?? t);
 
   const scoreColor =
     result.score >= 70
@@ -104,9 +132,16 @@ export function ResultCard({ result, profile }: Props) {
           <p className="font-semibold">+{result.scoreBreakdown.keywordBonus}점</p>
         </div>
         <div>
-          <p className="text-gray-400">복수전공</p>
-          <p className="font-semibold">+{result.scoreBreakdown.majorComboBonus}점</p>
+          <p className="text-gray-400">전공 적합도</p>
+          <p className="font-semibold">
+            +{result.scoreBreakdown.primaryMajorBonus + result.scoreBreakdown.secondaryMajorBonus}점
+          </p>
         </div>
+      </div>
+
+      <div className="mt-3 rounded-lg bg-indigo-50 px-4 py-3">
+        <p className="text-xs font-semibold text-indigo-600">추천 요약</p>
+        <p className="mt-1 text-sm text-gray-700">{result.reasonSummary}</p>
       </div>
 
       {/* 역량 배지 */}
@@ -164,6 +199,24 @@ export function ResultCard({ result, profile }: Props) {
         </div>
       )}
 
+      <div className="mt-3">
+        <p className="mb-1 text-xs font-semibold text-gray-500">미이수 핵심 과목 미리보기</p>
+        <div className="flex flex-wrap gap-1">
+          {coreMissingCourseNames.length > 0 ? (
+            coreMissingCourseNames.map((name) => (
+              <span
+                key={name}
+                className="rounded-full bg-purple-50 px-2.5 py-0.5 text-xs font-medium text-purple-700"
+              >
+                {name}
+              </span>
+            ))
+          ) : (
+            <span className="text-xs text-green-600 font-medium">핵심 과목 대부분 이수</span>
+          )}
+        </div>
+      </div>
+
       {/* 추천 이유 */}
       {result.reasons.length > 0 && (
         <div className="mt-3">
@@ -181,17 +234,30 @@ export function ResultCard({ result, profile }: Props) {
 
       {/* AI 해설 버튼 */}
       <div className="mt-4 border-t pt-4">
-        <button
-          onClick={handleExplain}
-          disabled={explainLoading}
-          className="rounded-lg border border-blue-300 bg-white px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 disabled:opacity-50 transition-colors"
-        >
-          {explainLoading
-            ? "AI 분석 중..."
-            : showPanel
-            ? "AI 해설 접기"
-            : "AI 해설 보기"}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => onPlanSelect(result)}
+            className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+              isPlanSelected
+                ? "bg-indigo-600 text-white"
+                : "border border-indigo-300 bg-white text-indigo-600 hover:bg-indigo-50"
+            }`}
+          >
+            {isPlanSelected ? "계획 옵션 열림" : "이 진로로 계획 짜기"}
+          </button>
+          <button
+            onClick={handleExplain}
+            disabled={explainLoading}
+            className="rounded-lg border border-blue-300 bg-white px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 disabled:opacity-50 transition-colors"
+          >
+            {explainLoading
+              ? "AI 분석 중..."
+              : showPanel
+              ? "AI 해설 접기"
+              : "AI 해설 보기"}
+          </button>
+        </div>
         {explainError && (
           <p className="mt-2 text-xs text-red-500">{explainError}</p>
         )}

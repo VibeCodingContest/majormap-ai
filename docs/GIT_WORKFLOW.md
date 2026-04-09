@@ -22,6 +22,12 @@ main
 | `docs/*` | 문서 작업 전용 |
 | `hotfix/*` | 데모 직전 긴급 수정 시에만 사용 |
 
+현재 정리 단계의 기본 원칙은 아래와 같다.
+
+1. `main`에서 직접 작업하지 않는다.
+2. 모든 변경은 `feat/*`, `docs/*`, `hotfix/*` 중 하나에서 진행한다.
+3. 최종 반영은 `feature branch -> PR -> merge` 순서를 따른다.
+
 ---
 
 ## 커밋 메시지 규칙
@@ -57,6 +63,8 @@ refactor: scoring.ts 분리 및 recommendation.ts 리팩터
 3. 상대방이 1회 리뷰 후 merge한다.
 4. PR 제목은 커밋 메시지 규칙과 동일하게 작성한다.
 5. 충돌이 생기면 feature 브랜치에서 `main`을 merge한 뒤 해결한다.
+6. 제출 직전 안정화 변경은 문서/배포 점검 커밋으로 분리하는 것을 우선한다.
+7. PR merge 전 `npm run lint`, `npm run build` 결과를 남긴다.
 
 ---
 
@@ -75,6 +83,7 @@ refactor: scoring.ts 분리 및 recommendation.ts 리팩터
 ```
 
 실제 `.github/CODEOWNERS` 파일로 등록하면 PR 생성 시 자동 리뷰어 지정이 가능하다.
+단, 실제 GitHub 핸들이 확정되기 전에는 잘못된 자동 할당을 막기 위해 placeholder `CODEOWNERS`를 생성하지 않는다.
 
 ---
 
@@ -82,13 +91,14 @@ refactor: scoring.ts 분리 및 recommendation.ts 리팩터
 
 1. 마지막 기능 merge 완료 확인
 2. `npm run build` 성공 확인
-3. 데모 시나리오 A/B/C 직접 클릭 테스트
+3. `docs/PROD_QA.md` 기준 live URL 수동 점검
 4. `.env.local`이 `.gitignore`에 포함되어 있는지 확인
 5. GitHub main 브랜치 보호 규칙 활성화
    - Settings → Branches → Branch protection rules → `main` 추가
    - "Require a pull request before merging" 체크
    - "Restrict who can push to matching branches" 체크
-6. 공모전 제출 마감 이후 커밋 금지
+6. 제출 직전 `git status`가 깨끗한지 확인
+7. 공모전 제출 마감 이후 커밋 금지
 
 ---
 
