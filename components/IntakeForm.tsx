@@ -2,8 +2,17 @@
 
 import { useState } from "react";
 import { courses, demoProfiles, skillTagLabels } from "@/lib/sample-data";
-import { CareerRecommendation, StudentProfile } from "@/lib/types";
+import {
+  CareerRecommendation,
+  PlanApiResponse,
+  PlanOptions,
+  PlanResult,
+  RecommendApiResponse,
+  StudentProfile,
+} from "@/lib/types";
+import { PlanSetupPanel } from "./PlanSetupPanel";
 import { ResultCard } from "./ResultCard";
+import { SemesterPlanPanel } from "./SemesterPlanPanel";
 
 const YEAR_TRACKS = ["2024", "2023"];
 const PRIMARY_MAJORS = ["컴퓨터공학", "경영학"];
@@ -17,12 +26,26 @@ const defaultProfile: StudentProfile = {
   interestKeywords: [],
 };
 
+const defaultPlanOptions: PlanOptions = {
+  nextSemester: "1",
+  targetCredits: 15,
+  semesterCount: 1,
+  includeLiberalArts: false,
+};
+
 export function IntakeForm() {
   const [profile, setProfile] = useState<StudentProfile>(defaultProfile);
   const [interestInput, setInterestInput] = useState("");
   const [results, setResults] = useState<CareerRecommendation[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [selectedCareer, setSelectedCareer] =
+    useState<CareerRecommendation | null>(null);
+  const [planOptions, setPlanOptions] = useState<PlanOptions>(defaultPlanOptions);
+  const [planResult, setPlanResult] = useState<PlanResult | null>(null);
+  const [planLoading, setPlanLoading] = useState(false);
+  const [planError, setPlanError] = useState<string | null>(null);
 
   const visibleCourses = courses.filter(
     (c) =>
@@ -31,12 +54,28 @@ export function IntakeForm() {
         (profile.secondaryMajor && c.majors.includes(profile.secondaryMajor)))
   );
 
+  function buildCurrentProfile(): StudentProfile {
+    return {
+      ...profile,
+      secondaryMajor:
+        profile.secondaryMajor === "없음" ? undefined : profile.secondaryMajor,
+      interestKeywords: interestInput
+        .split(",")
+        .map((value) => value.trim())
+        .filter(Boolean),
+    };
+  }
+
   function applyDemoProfile(idx: number) {
     const dp = demoProfiles[idx];
     setProfile(dp.profile);
     setInterestInput(dp.profile.interestKeywords.join(", "));
     setResults([]);
     setError(null);
+    setHasSubmitted(false);
+    setSelectedCareer(null);
+    setPlanResult(null);
+    setPlanError(null);
   }
 
   function toggleCourse(id: string) {
@@ -57,26 +96,69 @@ export function IntakeForm() {
     setError(null);
     setLoading(true);
     try {
-      const payload: StudentProfile = {
-        ...profile,
-        secondaryMajor:
-          profile.secondaryMajor === "없음" ? undefined : profile.secondaryMajor,
-        interestKeywords: interestInput
-          .split(",")
-          .map((v) => v.trim())
-          .filter(Boolean),
-      };
+      const payload = buildCurrentProfile();
       const res = await fetch("/api/recommend", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = await res.json();
-      setResults(data.results ?? []);
+
+      const data = (await res.json()) as RecommendApiResponse;
+
+      if (!res.ok || "error" in data) {
+        throw new Error(
+          "error" in data ? data.error : "추천 요청 중 오류가 발생했습니다."
+        );
+      }
+
+      setResults(data.results);
+      setHasSubmitted(true);
+      setSelectedCareer(null);
+      setPlanResult(null);
+      setPlanError(null);
     } catch {
+      setResults([]);
       setError("추천 요청 중 오류가 발생했습니다. 다시 시도해주세요.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handlePlanSubmit() {
+    if (!selectedCareer) {
+      return;
+    }
+
+    setPlanLoading(true);
+    setPlanError(null);
+
+    try {
+      const payload = {
+        ...buildCurrentProfile(),
+        careerId: selectedCareer.careerId,
+        ...planOptions,
+      };
+
+      const res = await fetch("/api/plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = (await res.json()) as PlanApiResponse;
+
+      if (!res.ok || "error" in data) {
+        throw new Error(
+          "error" in data ? data.error : "수강 계획 생성 중 오류가 발생했습니다."
+        );
+      }
+
+      setPlanResult(data.result);
+    } catch {
+      setPlanResult(null);
+      setPlanError("수강 계획 생성 중 오류가 발생했습니다. 다시 시도해주세요.");
+    } finally {
+      setPlanLoading(false);
     }
   }
 
@@ -243,11 +325,40 @@ export function IntakeForm() {
           <h2 className="mb-4 text-lg font-bold">추천 진로 TOP {results.length}</h2>
           <div className="space-y-4">
             {results.map((result) => (
-              <ResultCard key={result.careerId} result={result} profile={profile} />
+              <ResultCard
+                key={result.careerId}
+                result={result}
+                profile={buildCurrentProfile()}
+                onPlanSelect={(nextCareer) => {
+                  setSelectedCareer(nextCareer);
+                  setPlanResult(null);
+                  setPlanError(null);
+                }}
+                isPlanSelected={selectedCareer?.careerId === result.careerId}
+              />
             ))}
           </div>
         </section>
       )}
+
+      {hasSubmitted && !loading && results.length === 0 && !error && (
+        <section className="rounded-xl border border-dashed bg-white p-6 text-center text-sm text-gray-500">
+          조건에 맞는 추천 결과가 없습니다. 학번, 전공, 수강 과목을 다시 선택해보세요.
+        </section>
+      )}
+
+      {selectedCareer && (
+        <PlanSetupPanel
+          careerName={selectedCareer.careerName}
+          options={planOptions}
+          loading={planLoading}
+          error={planError}
+          onChange={setPlanOptions}
+          onSubmit={handlePlanSubmit}
+        />
+      )}
+
+      {planResult && <SemesterPlanPanel result={planResult} />}
     </div>
   );
 }

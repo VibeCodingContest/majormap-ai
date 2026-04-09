@@ -71,3 +71,21 @@
 - **AI 구현 범위**: `lib/types.ts` 타입 확장, `lib/sample-data.ts` 데이터 보강, `lib/scoring.ts` 신규, `lib/recommendation.ts` 리팩터, `lib/llm.ts` 신규, `app/api/explain/route.ts` 신규, `components/IntakeForm.tsx` 전면 교체, `components/ResultCard.tsx` 개선, `components/RoadmapPanel.tsx` 신규
 - **사람이 수정/검토한 부분**: 과목-진로 태그 매핑 타당성, 점수 정규화 기준, 데모 프로필 결과 차이 검증, 보안(API 키 서버 전용) 확인
 - **남은 이슈**: Next.js 프로젝트 설정 파일(`package.json`, `tailwind.config.js` 등) 실제 저장소에 추가 필요, Vercel 배포 설정 필요
+
+### 2026-04-08 — 실행 가능한 Next.js App Router 프로젝트로 정리
+
+- **담당**: 성혁
+- **도구**: Cursor Agent
+- **프롬프트 요약**: 기존 파일 구조를 유지한 채 실행 가능한 Next.js App Router + TypeScript + Tailwind 프로젝트로 안정화하고, 추천 흐름의 최소 에러 처리와 문서 일치성을 보강 요청
+- **AI 구현 범위**: `package.json`, `tsconfig.json`, `next.config.ts`, `postcss.config.mjs`, `eslint.config.mjs`, `app/layout.tsx`, `app/globals.css`, `.gitignore` 추가/보완, 추천 API 응답 타입 정리, `components/IntakeForm.tsx`의 fetch 에러 처리와 빈 결과 상태 추가, `README.md` 실행/검증 문구 보강
+- **사람이 수정/검토한 부분**: App Router 최소 설정 유지 여부, public repo 보안 규칙(`.env.local` 미추적), `npm run lint` / `npm run build` 실제 통과 여부 확인
+- **남은 이슈**: 배포 설정 미완료, 제출 체크리스트 문서 추가 필요, OpenAI 실 API 연결 상태는 발표 전 별도 확인 권장
+
+### 2026-04-09 — 2단계 수강 계획 엔진 추가
+
+- **담당**: 성혁
+- **도구**: Cursor Agent
+- **프롬프트 요약**: 기존 1단계 추천 MVP를 유지한 채, 선택한 진로 기준 다음 1~2개 학기 수강 계획을 규칙 기반으로 생성하는 2단계 구조를 추가 요청
+- **AI 구현 범위**: `lib/types.ts`에 계획 관련 타입 추가, `lib/sample-data.ts`에 `credits`, `offeredIn`, `category`, `prerequisites`, `coreCourseIds`, `preferredMajors`, `keywordAliases` 확장, `lib/planning.ts` 신규 작성, `app/api/plan/route.ts` 신규 작성, `components/PlanSetupPanel.tsx` / `components/SemesterPlanPanel.tsx` 신규 작성, `components/IntakeForm.tsx`에 계획 생성 흐름 통합, `components/ResultCard.tsx`에 `이 진로로 계획 짜기` 버튼 및 핵심 과목 preview 추가, `docs/STATUS_HANDOFF.md` / `docs/TASKS.md` / `README.md` 동기화
+- **사람이 수정/검토한 부분**: 2023/2024 학번 범위를 유지했는지, 과목 수가 12~18개 범위인지, 계획 엔진이 외부 LLM 없이 deterministic 하게 동작하는지, 기존 추천 흐름이 깨지지 않았는지 확인
+- **남은 이슈**: `docs/DEMO_SCRIPT.md`를 2단계 계획 흐름까지 업데이트할 필요가 있음, 발표 전 계획 엔진 시나리오 A/B/C 수동 클릭 검증 권장

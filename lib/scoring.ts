@@ -3,11 +3,16 @@ import { skillTagLabels } from "./sample-data";
 
 const REQUIRED_TAG_WEIGHT = 30;
 const OPTIONAL_TAG_WEIGHT = 10;
-const KEYWORD_BONUS_PER_MATCH = 8;
-const MAJOR_COMBO_BONUS = 10;
+const KEYWORD_BONUS_PER_MATCH = 6;
+const PRIMARY_MAJOR_BONUS = 10;
+const SECONDARY_MAJOR_BONUS = 6;
 
-// 점수 0~100 정규화 기준: 필수 태그 최대 3개 × 30 = 90, 선택 최대 3개 × 10 = 30 → 합산 후 /120 × 100
-const MAX_RAW_SCORE = 120;
+// 점수 정규화 기준: 필수 90 + 선택 30 + 키워드 18 + 주전공 10 + 복수전공 6
+const MAX_RAW_SCORE = 154;
+
+function normalizeKeyword(value: string) {
+  return value.trim().toLowerCase();
+}
 
 export function calcScore(
   career: Career,
@@ -24,39 +29,44 @@ export function calcScore(
   const requiredTagScore = matchedRequired.length * REQUIRED_TAG_WEIGHT;
   const optionalTagScore = matchedOptional.length * OPTIONAL_TAG_WEIGHT;
 
-  // 관심 키워드가 진로 이름/태그와 겹치면 보너스
-  const careerContext = [
-    career.id,
-    career.name,
-    ...career.requiredTags,
-    ...career.optionalTags,
-  ]
-    .join(" ")
-    .toLowerCase();
+  const normalizedKeywords = Array.from(
+    new Set(profile.interestKeywords.map(normalizeKeyword).filter(Boolean))
+  );
+  const aliases = Array.from(
+    new Set(
+      [career.id, career.name, ...(career.keywordAliases ?? [])]
+        .map(normalizeKeyword)
+        .filter(Boolean)
+    )
+  );
 
-  const keywordBonus = profile.interestKeywords.reduce((acc, kw) => {
-    return careerContext.includes(kw.toLowerCase())
-      ? acc + KEYWORD_BONUS_PER_MATCH
-      : acc;
-  }, 0);
+  const keywordMatches = normalizedKeywords.filter((keyword) =>
+    aliases.some((alias) => alias === keyword || alias.includes(keyword) || keyword.includes(alias))
+  );
+  const keywordBonus = keywordMatches.length * KEYWORD_BONUS_PER_MATCH;
 
-  // 복수전공 보유 시 비즈니스/전략 태그에 보너스
-  const majorComboBonus =
-    profile.secondaryMajor &&
-    (career.requiredTags.includes("business") ||
-      career.requiredTags.includes("strategy") ||
-      career.requiredTags.includes("consulting"))
-      ? MAJOR_COMBO_BONUS
+  const primaryMajorBonus = career.preferredMajors?.includes(profile.primaryMajor)
+    ? PRIMARY_MAJOR_BONUS
+    : 0;
+  const secondaryMajorBonus =
+    profile.secondaryMajor && career.preferredMajors?.includes(profile.secondaryMajor)
+      ? SECONDARY_MAJOR_BONUS
       : 0;
 
-  const raw = requiredTagScore + optionalTagScore + keywordBonus + majorComboBonus;
+  const raw =
+    requiredTagScore +
+    optionalTagScore +
+    keywordBonus +
+    primaryMajorBonus +
+    secondaryMajorBonus;
   const total = Math.min(Math.round((raw / MAX_RAW_SCORE) * 100), 100);
 
   return {
     requiredTagScore,
     optionalTagScore,
     keywordBonus,
-    majorComboBonus,
+    primaryMajorBonus,
+    secondaryMajorBonus,
     total,
   };
 }
@@ -77,7 +87,16 @@ export function buildReasons(
     reasons.push(`수강한 과목에서 ${tagNames} 역량을 이미 보유하고 있습니다.`);
   }
 
-  if (profile.secondaryMajor) {
+  if (career.preferredMajors?.includes(profile.primaryMajor)) {
+    reasons.push(
+      `${profile.primaryMajor} 전공 배경이 ${career.name} 진로와 직접 연결됩니다.`
+    );
+  }
+
+  if (
+    profile.secondaryMajor &&
+    career.preferredMajors?.includes(profile.secondaryMajor)
+  ) {
     reasons.push(
       `${profile.primaryMajor}과 ${profile.secondaryMajor} 복수전공 조합은 이 진로에서 강점이 됩니다.`
     );
