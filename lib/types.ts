@@ -37,6 +37,10 @@ export type ScoreBreakdown = {
   keywordBonus: number;
   primaryMajorBonus: number;
   secondaryMajorBonus: number;
+  evidencePenalty: number;
+  requiredCoveragePct: number;
+  optionalCoveragePct: number;
+  relatedCourseCount: number;
   total: number;
 };
 
@@ -54,6 +58,9 @@ export type CareerRecommendation = {
   reasons: string[];
   coreMissingCourseIds: string[];
   recommendedCourseIds: string[];
+  evidenceCourseCount: number;
+  confidenceLabel: "낮음" | "보통" | "높음";
+  confidenceReason: string;
 };
 
 export type DemoProfile = {
@@ -96,10 +103,18 @@ export type PlannedCourse = {
   whyNow: string;
 };
 
+export type CreditGapGuidance = {
+  remainingCredits: number;
+  message: string;
+  suggestedCourseIds: string[];
+};
+
 export type PlannedSemester = {
   termLabel: string;
   totalCredits: number;
+  remainingCredits: number;
   courses: PlannedCourse[];
+  creditGapGuidance?: CreditGapGuidance;
 };
 
 export type DeferredCourse = {

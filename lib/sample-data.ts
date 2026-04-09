@@ -1,5 +1,19 @@
 import { Career, Course, DemoProfile } from "./types";
 
+export const DATASET_NOTICE =
+  "현재는 특정 실대학명이 아닌 데모용 샘플 커리큘럼 데이터셋 기준으로 동작합니다.";
+
+export const COURSE_CODE_NOTE =
+  "과목코드는 실제 학사 코드가 아니라 데모 화면에서 구분을 돕기 위한 내부 식별자입니다.";
+
+export const MVP_SCOPE_SUMMARY = [
+  "샘플 커리큘럼 1종",
+  "컴퓨터공학·경영학",
+  "2023·2024 학번 트랙",
+  "진로 4개",
+  "1~2개 학기 계획",
+];
+
 export const courses: Course[] = [
   // 컴퓨터공학 공통 (2023/2024)
   {

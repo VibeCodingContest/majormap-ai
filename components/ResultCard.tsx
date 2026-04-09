@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { ReactNode, useState } from "react";
 import { courseMap, skillTagLabels } from "@/lib/sample-data";
 import {
   CareerRecommendation,
@@ -15,6 +15,7 @@ type Props = {
   profile: StudentProfile;
   onPlanSelect: (result: CareerRecommendation) => void;
   isPlanSelected: boolean;
+  children?: ReactNode;
 };
 
 function isExplainResponse(value: ExplainApiResponse): value is ExplainResponse {
@@ -33,6 +34,7 @@ export function ResultCard({
   profile,
   onPlanSelect,
   isPlanSelected,
+  children,
 }: Props) {
   const [explainData, setExplainData] = useState<ExplainResponse | null>(null);
   const [explainLoading, setExplainLoading] = useState(false);
@@ -101,6 +103,13 @@ export function ResultCard({
       ? "text-yellow-600"
       : "text-red-500";
 
+  const confidenceColor =
+    result.confidenceLabel === "높음"
+      ? "bg-emerald-100 text-emerald-700"
+      : result.confidenceLabel === "보통"
+      ? "bg-amber-100 text-amber-700"
+      : "bg-red-100 text-red-700";
+
   return (
     <div className="rounded-xl border bg-white p-5 shadow-sm">
       {/* 헤더 */}
@@ -108,8 +117,19 @@ export function ResultCard({
         <div>
           <h2 className="text-lg font-bold text-gray-900">{result.careerName}</h2>
           <p className="mt-0.5 text-sm text-gray-500">{result.summary}</p>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <span
+              className={`rounded-full px-2.5 py-1 text-xs font-semibold ${confidenceColor}`}
+            >
+              근거 충분도 {result.confidenceLabel}
+            </span>
+            <span className="text-xs text-gray-500">
+              관련 이수 과목 {result.evidenceCourseCount}개
+            </span>
+          </div>
         </div>
         <div className="shrink-0 text-right">
+          <p className="text-xs font-medium text-gray-400">추천 적합도</p>
           <span className={`text-2xl font-extrabold ${scoreColor}`}>
             {result.score}
           </span>
@@ -118,14 +138,21 @@ export function ResultCard({
       </div>
 
       {/* 점수 세부 내역 */}
-      <div className="mt-3 grid grid-cols-2 gap-2 rounded-lg bg-gray-50 p-3 text-xs sm:grid-cols-4">
+      <div className="mt-3 grid grid-cols-2 gap-2 rounded-lg bg-gray-50 p-3 text-xs sm:grid-cols-5">
         <div>
-          <p className="text-gray-400">필수역량</p>
-          <p className="font-semibold">{result.scoreBreakdown.requiredTagScore}점</p>
+          <p className="text-gray-400">필수 커버리지</p>
+          <p className="font-semibold">{result.scoreBreakdown.requiredCoveragePct}%</p>
         </div>
         <div>
-          <p className="text-gray-400">선택역량</p>
-          <p className="font-semibold">{result.scoreBreakdown.optionalTagScore}점</p>
+          <p className="text-gray-400">선택 커버리지</p>
+          <p className="font-semibold">{result.scoreBreakdown.optionalCoveragePct}%</p>
+        </div>
+        <div>
+          <p className="text-gray-400">필수/선택 점수</p>
+          <p className="font-semibold">{result.scoreBreakdown.requiredTagScore}점</p>
+          <p className="text-[11px] text-gray-400">
+            선택 {result.scoreBreakdown.optionalTagScore}점
+          </p>
         </div>
         <div>
           <p className="text-gray-400">키워드</p>
@@ -136,12 +163,16 @@ export function ResultCard({
           <p className="font-semibold">
             +{result.scoreBreakdown.primaryMajorBonus + result.scoreBreakdown.secondaryMajorBonus}점
           </p>
+          <p className="text-[11px] text-gray-400">
+            보정 {result.scoreBreakdown.evidencePenalty}점
+          </p>
         </div>
       </div>
 
       <div className="mt-3 rounded-lg bg-indigo-50 px-4 py-3">
         <p className="text-xs font-semibold text-indigo-600">추천 요약</p>
         <p className="mt-1 text-sm text-gray-700">{result.reasonSummary}</p>
+        <p className="mt-2 text-xs text-indigo-700">{result.confidenceReason}</p>
       </div>
 
       {/* 역량 배지 */}
@@ -244,7 +275,7 @@ export function ResultCard({
                 : "border border-indigo-300 bg-white text-indigo-600 hover:bg-indigo-50"
             }`}
           >
-            {isPlanSelected ? "계획 옵션 열림" : "이 진로로 계획 짜기"}
+            {isPlanSelected ? "계획 닫기" : "이 진로로 계획 짜기"}
           </button>
           <button
             onClick={handleExplain}
@@ -266,6 +297,8 @@ export function ResultCard({
       {showPanel && explainData && (
         <RoadmapPanel data={explainData} onClose={() => setShowPanel(false)} />
       )}
+
+      {children}
     </div>
   );
 }

@@ -139,6 +139,41 @@ function buildDeferredReason(
   return "개설 학기와 학점 한도를 고려할 때 이번 계획 범위를 넘어 deferred 처리했습니다.";
 }
 
+function buildCreditGapGuidance(
+  request: PlanRequest,
+  semester: "1" | "2",
+  availableCourses: Course[],
+  plannedCourseIds: Set<string>,
+  completedCourseIds: Set<string>,
+  remainingCredits: number
+) {
+  if (!request.includeLiberalArts || remainingCredits <= 0) {
+    return undefined;
+  }
+
+  const suggestedCourseIds = availableCourses
+    .filter(
+      (course) =>
+        course.category === "liberal" &&
+        !plannedCourseIds.has(course.id) &&
+        termMatches(course.offeredIn, semester) &&
+        (course.prerequisites ?? []).every((prerequisite) =>
+          completedCourseIds.has(prerequisite)
+        )
+    )
+    .slice(0, 2)
+    .map((course) => course.id);
+
+  return {
+    remainingCredits,
+    message:
+      suggestedCourseIds.length > 0
+        ? `목표 학점까지 ${remainingCredits}학점이 남아 교양 보완 검토를 권장합니다.`
+        : `목표 학점까지 ${remainingCredits}학점이 남았지만 현재 데이터셋에서는 같은 학기에 바로 넣을 교양 후보가 부족합니다.`,
+    suggestedCourseIds,
+  };
+}
+
 export function buildPlan(request: PlanRequest): PlanResult {
   const career = careerMap[request.careerId];
 
@@ -235,11 +270,22 @@ export function buildPlan(request: PlanRequest): PlanResult {
     }
 
     selectedCourses.forEach((course) => completedCourseIds.add(course.courseId));
+    const remainingCredits = Math.max(request.targetCredits - totalCredits, 0);
+    const creditGapGuidance = buildCreditGapGuidance(
+      request,
+      term.semester,
+      availableCourses,
+      plannedCourseIds,
+      completedCourseIds,
+      remainingCredits
+    );
 
     return {
       termLabel: term.termLabel,
       totalCredits,
+      remainingCredits,
       courses: selectedCourses,
+      creditGapGuidance,
     };
   });
 

@@ -80,3 +80,12 @@
 - **AI 구현 범위**: `README.md`, `app/page.tsx` 카피 업데이트, `docs/README.md` 추가, `docs/AI_REPORT_DRAFT.md`, `docs/JUDGE_ONE_PAGER.md`, `docs/FINAL_CHECKLIST.md`, `docs/SUBMISSION_GUIDE.md`, `docs/PROD_QA.md`, `docs/DEMO_BLOCKERS.md`, `docs/QA_SCENARIOS.md` 추가, `docs/GIT_WORKFLOW.md`, `docs/DEMO_SCRIPT.md`, `docs/STATUS_HANDOFF.md`, `docs/TASKS.md` 정규화
 - **사람이 수정/검토한 부분**: canonical repo를 `majormap-ai`로 고정할지 여부, `초기설계안` 코드 폴더를 현재 repo에 덮어쓰지 않는 원칙 유지, 현재 코드와 맞지 않는 2단계 계획 문구 제거 여부 판단
 - **남은 이슈**: `초기설계안` 폴더 자체의 archive 이동은 로컬 파일 이동 작업이므로 별도 수동 실행 또는 후속 정리가 필요
+
+### 2026-04-09 — 점수 신뢰도 및 추천→계획 UX 개선
+
+- **담당**: 성혁
+- **도구**: Cursor Agent
+- **프롬프트 요약**: 2단계 범위는 유지한 채 홈 첫인상, 샘플 커리큘럼 고지, 점수 후함 보정, 카드 인라인 계획 UX, 남은 학점 교양 안내를 개선 요청
+- **AI 구현 범위**: `app/page.tsx` 정보 섹션 추가, `components/IntakeForm.tsx` 데이터셋 안내 및 인라인 계획 흐름 개선, `components/ResultCard.tsx` 근거 충분도/점수 해석 강화, `components/SemesterPlanPanel.tsx` 남은 학점 보완 블록 추가, `lib/scoring.ts` 커버리지 기반 점수화 및 low-evidence penalty 반영, `lib/planning.ts` 남은 학점 교양 안내 추가, 관련 문서 동기화
+- **사람이 수정/검토한 부분**: 실대학명이 아닌 샘플 커리큘럼으로 명시할지 여부, 점수 보정 강도, 카드 아래 인라인 계획 UX가 데모 흐름을 더 자연스럽게 만드는지 여부
+- **남은 이슈**: live URL에서 A/B/C 시나리오를 실제 클릭으로 검증해 점수 체감과 스크롤 동작을 최종 확인할 필요가 있음

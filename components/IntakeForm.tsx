@@ -1,7 +1,13 @@
 'use client';
 
-import { useState } from "react";
-import { courses, demoProfiles, skillTagLabels } from "@/lib/sample-data";
+import { useEffect, useState } from "react";
+import {
+  COURSE_CODE_NOTE,
+  courses,
+  DATASET_NOTICE,
+  demoProfiles,
+  skillTagLabels,
+} from "@/lib/sample-data";
 import {
   CareerRecommendation,
   PlanApiResponse,
@@ -162,8 +168,38 @@ export function IntakeForm() {
     }
   }
 
+  useEffect(() => {
+    if (!selectedCareer) {
+      return;
+    }
+
+    const element = document.getElementById(
+      `plan-inline-${selectedCareer.careerId}`
+    );
+
+    if (!element) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      element.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      element.focus();
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [selectedCareer, planResult, planLoading]);
+
   return (
     <div className="mt-6 space-y-8">
+      <section className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+        <p className="font-semibold">지원 데이터셋 안내</p>
+        <p className="mt-1">{DATASET_NOTICE}</p>
+        <p className="mt-1">
+          현재 지원 범위는 컴퓨터공학·경영학, 2023·2024 학번 트랙, 진로 4개입니다.
+        </p>
+        <p className="mt-1 text-amber-800">{COURSE_CODE_NOTE}</p>
+      </section>
+
       {/* 데모 프로필 빠른 선택 */}
       <section>
         <p className="mb-2 text-sm font-semibold text-gray-500 uppercase tracking-wide">
@@ -273,7 +309,9 @@ export function IntakeForm() {
                   />
                   <div>
                     <span className="text-sm font-medium">{course.name}</span>
-                    <span className="ml-1 text-xs text-gray-400">{course.code}</span>
+                    <p className="mt-0.5 text-[11px] text-gray-400">
+                      과목코드 {course.code}
+                    </p>
                     <div className="mt-0.5 flex flex-wrap gap-1">
                       {course.tags.map((tag) => (
                         <span
@@ -330,12 +368,39 @@ export function IntakeForm() {
                 result={result}
                 profile={buildCurrentProfile()}
                 onPlanSelect={(nextCareer) => {
+                  if (selectedCareer?.careerId === nextCareer.careerId) {
+                    setSelectedCareer(null);
+                    setPlanResult(null);
+                    setPlanError(null);
+                    return;
+                  }
+
                   setSelectedCareer(nextCareer);
                   setPlanResult(null);
                   setPlanError(null);
                 }}
                 isPlanSelected={selectedCareer?.careerId === result.careerId}
-              />
+              >
+                {selectedCareer?.careerId === result.careerId && (
+                  <div
+                    id={`plan-inline-${result.careerId}`}
+                    tabIndex={-1}
+                    className="mt-4 space-y-4 border-t pt-4 outline-none"
+                  >
+                    <PlanSetupPanel
+                      careerName={selectedCareer.careerName}
+                      options={planOptions}
+                      loading={planLoading}
+                      error={planError}
+                      onChange={setPlanOptions}
+                      onSubmit={handlePlanSubmit}
+                    />
+                    {planResult?.selectedCareer.careerId === result.careerId && (
+                      <SemesterPlanPanel result={planResult} />
+                    )}
+                  </div>
+                )}
+              </ResultCard>
             ))}
           </div>
         </section>
@@ -346,19 +411,6 @@ export function IntakeForm() {
           조건에 맞는 추천 결과가 없습니다. 학번, 전공, 수강 과목을 다시 선택해보세요.
         </section>
       )}
-
-      {selectedCareer && (
-        <PlanSetupPanel
-          careerName={selectedCareer.careerName}
-          options={planOptions}
-          loading={planLoading}
-          error={planError}
-          onChange={setPlanOptions}
-          onSubmit={handlePlanSubmit}
-        />
-      )}
-
-      {planResult && <SemesterPlanPanel result={planResult} />}
     </div>
   );
 }

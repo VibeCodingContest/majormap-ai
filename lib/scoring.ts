@@ -1,24 +1,29 @@
-import { Career, ScoreBreakdown, StudentProfile } from "./types";
+import { Career, Course, ScoreBreakdown, StudentProfile } from "./types";
 import { skillTagLabels } from "./sample-data";
 
-const REQUIRED_TAG_WEIGHT = 30;
-const OPTIONAL_TAG_WEIGHT = 10;
-const KEYWORD_BONUS_PER_MATCH = 6;
-const PRIMARY_MAJOR_BONUS = 10;
-const SECONDARY_MAJOR_BONUS = 6;
-
-// 점수 정규화 기준: 필수 90 + 선택 30 + 키워드 18 + 주전공 10 + 복수전공 6
-const MAX_RAW_SCORE = 154;
+const REQUIRED_TAG_SCORE_MAX = 60;
+const OPTIONAL_TAG_SCORE_MAX = 15;
+const KEYWORD_BONUS_PER_MATCH = 4;
+const KEYWORD_BONUS_MAX = 8;
+const PRIMARY_MAJOR_BONUS = 4;
+const SECONDARY_MAJOR_BONUS = 2;
 
 function normalizeKeyword(value: string) {
   return value.trim().toLowerCase();
 }
 
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
+
 export function calcScore(
   career: Career,
-  ownedTags: string[],
+  takenCourses: Course[],
   profile: StudentProfile
 ): ScoreBreakdown {
+  const ownedTags = Array.from(
+    new Set(takenCourses.flatMap((course) => course.tags))
+  );
   const matchedRequired = career.requiredTags.filter((t) =>
     ownedTags.includes(t)
   );
@@ -26,8 +31,17 @@ export function calcScore(
     ownedTags.includes(t)
   );
 
-  const requiredTagScore = matchedRequired.length * REQUIRED_TAG_WEIGHT;
-  const optionalTagScore = matchedOptional.length * OPTIONAL_TAG_WEIGHT;
+  const requiredCoverage =
+    career.requiredTags.length > 0
+      ? matchedRequired.length / career.requiredTags.length
+      : 0;
+  const optionalCoverage =
+    career.optionalTags.length > 0
+      ? matchedOptional.length / career.optionalTags.length
+      : 0;
+
+  const requiredTagScore = Math.round(requiredCoverage * REQUIRED_TAG_SCORE_MAX);
+  const optionalTagScore = Math.round(optionalCoverage * OPTIONAL_TAG_SCORE_MAX);
 
   const normalizedKeywords = Array.from(
     new Set(profile.interestKeywords.map(normalizeKeyword).filter(Boolean))
@@ -43,7 +57,10 @@ export function calcScore(
   const keywordMatches = normalizedKeywords.filter((keyword) =>
     aliases.some((alias) => alias === keyword || alias.includes(keyword) || keyword.includes(alias))
   );
-  const keywordBonus = keywordMatches.length * KEYWORD_BONUS_PER_MATCH;
+  const keywordBonus = Math.min(
+    keywordMatches.length * KEYWORD_BONUS_PER_MATCH,
+    KEYWORD_BONUS_MAX
+  );
 
   const primaryMajorBonus = career.preferredMajors?.includes(profile.primaryMajor)
     ? PRIMARY_MAJOR_BONUS
@@ -53,13 +70,26 @@ export function calcScore(
       ? SECONDARY_MAJOR_BONUS
       : 0;
 
+  const relatedCourseCount = takenCourses.filter(
+    (course) =>
+      career.coreCourseIds.includes(course.id) ||
+      course.tags.some(
+        (tag) =>
+          career.requiredTags.includes(tag) || career.optionalTags.includes(tag)
+      )
+  ).length;
+
+  const evidencePenalty =
+    relatedCourseCount <= 1 ? -18 : relatedCourseCount === 2 ? -10 : relatedCourseCount === 3 ? -4 : 0;
+
   const raw =
     requiredTagScore +
     optionalTagScore +
     keywordBonus +
     primaryMajorBonus +
-    secondaryMajorBonus;
-  const total = Math.min(Math.round((raw / MAX_RAW_SCORE) * 100), 100);
+    secondaryMajorBonus +
+    evidencePenalty;
+  const total = clamp(Math.round(raw), 0, 100);
 
   return {
     requiredTagScore,
@@ -67,6 +97,10 @@ export function calcScore(
     keywordBonus,
     primaryMajorBonus,
     secondaryMajorBonus,
+    evidencePenalty,
+    requiredCoveragePct: Math.round(requiredCoverage * 100),
+    optionalCoveragePct: Math.round(optionalCoverage * 100),
+    relatedCourseCount,
     total,
   };
 }
