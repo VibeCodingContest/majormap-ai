@@ -121,15 +121,18 @@ export function calculateCoverageScore(
 export function calculateEvidencePenaltyMultiplier(relatedCourseCount: number) {
   // 관련 과목 수가 적을수록 최종 점수를 보수적으로 축소한다.
   if (relatedCourseCount <= 1) {
-    return 0.45;
+    return 0.35;
   }
   if (relatedCourseCount === 2) {
-    return 0.6;
+    return 0.5;
   }
   if (relatedCourseCount === 3) {
-    return 0.72;
+    return 0.58;
   }
   if (relatedCourseCount === 4) {
+    return 0.65;
+  }
+  if (relatedCourseCount === 5) {
     return 0.82;
   }
   return 1;
@@ -138,10 +141,10 @@ export function calculateEvidencePenaltyMultiplier(relatedCourseCount: number) {
 export function deriveConfidenceLevel(
   relatedCourseCount: number
 ): "low" | "medium" | "high" {
-  if (relatedCourseCount <= 2) {
+  if (relatedCourseCount <= 3) {
     return "low";
   }
-  if (relatedCourseCount <= 4) {
+  if (relatedCourseCount <= 5) {
     return "medium";
   }
   return "high";
