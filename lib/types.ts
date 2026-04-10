@@ -60,6 +60,11 @@ export type StudentProfile = {
   interestKeywords: string[];
 };
 
+export type CourseVisibilityContext = Pick<
+  StudentProfile,
+  "studentYearTrack" | "primaryMajor" | "secondaryMajor"
+>;
+
 export type ScoreBreakdown = {
   requiredCoverage: number;
   optionalCoverage: number;

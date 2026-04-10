@@ -1,4 +1,9 @@
 import { NextResponse } from "next/server";
+import {
+  filterTakenCourseIdsByVisibility,
+  filterTakenCoursesByVisibility,
+  normalizeSecondaryMajor,
+} from "@/lib/course-visibility";
 import { validateTakenCourseGradePolicy } from "@/lib/grade-policy";
 import { recommendCareers } from "@/lib/recommendation";
 import { RecommendApiResponse, StudentProfile } from "@/lib/types";
@@ -46,13 +51,21 @@ export async function POST(req: Request) {
           (courseId: unknown): courseId is string => typeof courseId === "string"
         )
       : [];
-
-    const profile: StudentProfile = {
+    const secondaryMajor = normalizeSecondaryMajor(body.secondaryMajor || undefined);
+    const profileBase = {
       studentYearTrack: body.studentYearTrack ?? "2024",
       primaryMajor: body.primaryMajor ?? "컴퓨터공학",
-      secondaryMajor: body.secondaryMajor || undefined,
-      takenCourses,
-      takenCourseIds,
+      secondaryMajor,
+    };
+    const visibleTakenCourses = filterTakenCoursesByVisibility(profileBase, takenCourses);
+    const visibleTakenCourseIds = hasTakenCoursesPayload
+      ? visibleTakenCourses.map((course) => course.courseId)
+      : filterTakenCourseIdsByVisibility(profileBase, takenCourseIds);
+
+    const profile: StudentProfile = {
+      ...profileBase,
+      takenCourses: visibleTakenCourses,
+      takenCourseIds: visibleTakenCourseIds,
       interestKeywords: Array.isArray(body.interestKeywords) ? body.interestKeywords : [],
     };
     const gradePolicyError = validateTakenCourseGradePolicy(profile.takenCourses);

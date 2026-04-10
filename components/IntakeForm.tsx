@@ -1,13 +1,17 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   COURSE_CODE_NOTE,
-  courses,
   DATASET_NOTICE,
   demoProfiles,
   skillTagLabels,
 } from "@/lib/sample-data";
+import {
+  filterTakenCoursesByVisibility,
+  getVisibleCoursesForProfile,
+  normalizeSecondaryMajor,
+} from "@/lib/course-visibility";
 import { validateTakenCourseGradePolicy } from "@/lib/grade-policy";
 import {
   CareerRecommendation,
@@ -165,26 +169,39 @@ function CourseSelectionCard({
   );
 }
 
-const defaultProfile: StudentProfile = {
-  studentYearTrack: "2024",
-  primaryMajor: "컴퓨터공학",
-  secondaryMajor: undefined,
-  takenCourses: [],
-  takenCourseIds: [],
-  interestKeywords: [],
-};
+function createDefaultProfile(): StudentProfile {
+  return {
+    studentYearTrack: "2024",
+    primaryMajor: "컴퓨터공학",
+    secondaryMajor: undefined,
+    takenCourses: [],
+    takenCourseIds: [],
+    interestKeywords: [],
+  };
+}
 
-const defaultPlanOptions: PlanOptions = {
-  nextSemester: "1",
-  targetCredits: 15,
-  firstSemesterTargetCredits: 15,
-  secondSemesterTargetCredits: 15,
-  semesterCount: 1,
-  includeLiberalArts: false,
-};
+function createDefaultPlanOptions(): PlanOptions {
+  return {
+    nextSemester: "1",
+    targetCredits: 15,
+    firstSemesterTargetCredits: 15,
+    secondSemesterTargetCredits: 15,
+    semesterCount: 1,
+    includeLiberalArts: false,
+  };
+}
+
+function isAbortError(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "name" in error &&
+    error.name === "AbortError"
+  );
+}
 
 export function IntakeForm() {
-  const [profile, setProfile] = useState<StudentProfile>(defaultProfile);
+  const [profile, setProfile] = useState<StudentProfile>(() => createDefaultProfile());
   const [selectedCourses, setSelectedCourses] = useState<SelectedCourseState>({});
   const [interestInput, setInterestInput] = useState("");
   const [results, setResults] = useState<CareerRecommendation[]>([]);
@@ -193,35 +210,48 @@ export function IntakeForm() {
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [selectedCareer, setSelectedCareer] =
     useState<CareerRecommendation | null>(null);
-  const [planOptions, setPlanOptions] = useState<PlanOptions>(defaultPlanOptions);
+  const [planOptions, setPlanOptions] = useState<PlanOptions>(() =>
+    createDefaultPlanOptions()
+  );
   const [planResult, setPlanResult] = useState<PlanResult | null>(null);
   const [planLoading, setPlanLoading] = useState(false);
   const [planError, setPlanError] = useState<string | null>(null);
   const [retakeSelectionMap, setRetakeSelectionMap] = useState<
     Record<string, string[]>
   >({});
+  const recommendAbortControllerRef = useRef<AbortController | null>(null);
+  const planAbortControllerRef = useRef<AbortController | null>(null);
 
-  const visibleCourses = courses.filter(
-    (c) =>
-      c.yearTracks.includes(profile.studentYearTrack) &&
-      (c.majors.includes(profile.primaryMajor) ||
-        (profile.secondaryMajor && c.majors.includes(profile.secondaryMajor)))
+  const visibleCourses = useMemo(
+    () => getVisibleCoursesForProfile(profile),
+    [profile]
+  );
+  const visibleCourseIds = useMemo(
+    () => visibleCourses.map((course) => course.id),
+    [visibleCourses]
+  );
+  const visibleCourseIdSet = useMemo(
+    () => new Set(visibleCourseIds),
+    [visibleCourseIds]
   );
   const secondaryMajorOptions = [
     "없음",
     ...PRIMARY_MAJORS.filter((major) => major !== profile.primaryMajor),
   ];
-  const selectedCourseCount = Object.values(selectedCourses).filter(
-    (course) => course.checked
+  const selectedCourseCount = visibleCourses.filter(
+    (course) => selectedCourses[course.id]?.checked
   ).length;
 
   function buildCurrentProfile(): StudentProfile {
-    const takenCourses = buildTakenCourses(selectedCourses);
+    const takenCourses = filterTakenCoursesByVisibility(
+      profile,
+      buildTakenCourses(selectedCourses)
+    );
+    const secondaryMajor = normalizeSecondaryMajor(profile.secondaryMajor);
 
     return {
       ...profile,
-      secondaryMajor:
-        profile.secondaryMajor === "없음" ? undefined : profile.secondaryMajor,
+      secondaryMajor,
       takenCourses,
       takenCourseIds: takenCourses.map((course) => course.courseId),
       interestKeywords: interestInput
@@ -233,7 +263,10 @@ export function IntakeForm() {
 
   function applyDemoProfile(idx: number) {
     const dp = demoProfiles[idx];
-    setProfile(dp.profile);
+    setProfile({
+      ...dp.profile,
+      secondaryMajor: normalizeSecondaryMajor(dp.profile.secondaryMajor),
+    });
     setSelectedCourses(buildSelectedCourseState(dp.profile));
     setInterestInput(dp.profile.interestKeywords.join(", "));
     setResults([]);
@@ -243,7 +276,7 @@ export function IntakeForm() {
     setPlanResult(null);
     setPlanError(null);
     setRetakeSelectionMap({});
-    setPlanOptions(defaultPlanOptions);
+    setPlanOptions(createDefaultPlanOptions());
   }
 
   function toggleRetakeCourseSelection(
@@ -269,10 +302,9 @@ export function IntakeForm() {
       const current = prev[id];
 
       if (current?.checked) {
-        return {
-          ...prev,
-          [id]: { checked: false, grade: "" },
-        };
+        const next = { ...prev };
+        delete next[id];
+        return next;
       }
 
       return {
@@ -292,22 +324,24 @@ export function IntakeForm() {
     }));
   }
 
-  function resetCourseSelections() {
+  function resetForm() {
+    recommendAbortControllerRef.current?.abort();
+    recommendAbortControllerRef.current = null;
+    planAbortControllerRef.current?.abort();
+    planAbortControllerRef.current = null;
+    setProfile(createDefaultProfile());
     setSelectedCourses({});
-    setProfile((prev) => ({
-      ...prev,
-      secondaryMajor: undefined,
-      takenCourses: [],
-      takenCourseIds: [],
-    }));
+    setInterestInput("");
     setResults([]);
+    setLoading(false);
+    setError(null);
     setHasSubmitted(false);
     setSelectedCareer(null);
+    setPlanOptions(createDefaultPlanOptions());
     setPlanResult(null);
+    setPlanLoading(false);
     setPlanError(null);
     setRetakeSelectionMap({});
-    setPlanOptions(defaultPlanOptions);
-    setError(null);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -332,10 +366,15 @@ export function IntakeForm() {
 
     setError(null);
     setLoading(true);
+    recommendAbortControllerRef.current?.abort();
+    const controller = new AbortController();
+    recommendAbortControllerRef.current = controller;
+
     try {
       const res = await fetch("/api/recommend", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify(payload),
       });
 
@@ -353,11 +392,18 @@ export function IntakeForm() {
       setPlanResult(null);
       setPlanError(null);
       setRetakeSelectionMap({});
-    } catch {
+    } catch (caughtError) {
+      if (isAbortError(caughtError)) {
+        return;
+      }
+
       setResults([]);
       setError("추천 요청 중 오류가 발생했습니다. 다시 시도해주세요.");
     } finally {
-      setLoading(false);
+      if (recommendAbortControllerRef.current === controller) {
+        recommendAbortControllerRef.current = null;
+        setLoading(false);
+      }
     }
   }
 
@@ -368,6 +414,9 @@ export function IntakeForm() {
 
     setPlanLoading(true);
     setPlanError(null);
+    planAbortControllerRef.current?.abort();
+    const controller = new AbortController();
+    planAbortControllerRef.current = controller;
 
     try {
       const firstSemesterTargetCredits =
@@ -390,6 +439,7 @@ export function IntakeForm() {
       const res = await fetch("/api/plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify(payload),
       });
 
@@ -402,13 +452,41 @@ export function IntakeForm() {
       }
 
       setPlanResult(data.result);
-    } catch {
+    } catch (caughtError) {
+      if (isAbortError(caughtError)) {
+        return;
+      }
+
       setPlanResult(null);
       setPlanError("수강 계획 생성 중 오류가 발생했습니다. 다시 시도해주세요.");
     } finally {
-      setPlanLoading(false);
+      if (planAbortControllerRef.current === controller) {
+        planAbortControllerRef.current = null;
+        setPlanLoading(false);
+      }
     }
   }
+
+  useEffect(() => {
+    setSelectedCourses((prev) => {
+      const nextEntries = Object.entries(prev).filter(([courseId]) =>
+        visibleCourseIdSet.has(courseId)
+      );
+
+      if (nextEntries.length === Object.keys(prev).length) {
+        return prev;
+      }
+
+      return Object.fromEntries(nextEntries);
+    });
+  }, [visibleCourseIdSet]);
+
+  useEffect(() => {
+    return () => {
+      recommendAbortControllerRef.current?.abort();
+      planAbortControllerRef.current?.abort();
+    };
+  }, []);
 
   useEffect(() => {
     if (!selectedCareer) {
@@ -460,7 +538,7 @@ export function IntakeForm() {
           ))}
           <button
             type="button"
-            onClick={resetCourseSelections}
+            onClick={resetForm}
             className="shrink-0 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-500"
           >
             초기화
