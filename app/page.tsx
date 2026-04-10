@@ -13,9 +13,9 @@ export default function HomePage() {
   ];
 
   const differentiators = [
-    "추천과 계획은 외부 LLM 없이 규칙 기반으로 계산",
-    "점수와 추천 근거를 함께 보여줘 결과 해석이 쉬움",
-    "AI 설명이 실패해도 추천과 계획 흐름은 그대로 유지",
+    "추천과 계획을 규칙 기반으로 안정적으로 계산",
+    "점수와 추천 근거를 함께 보여줘 해석이 쉬움",
+    "AI 설명이 실패해도 추천과 계획은 그대로 유지",
   ];
 
   return (
@@ -77,7 +77,7 @@ export default function HomePage() {
 
         <div className="rounded-2xl border bg-white p-5 shadow-sm">
           <h2 className="text-base font-semibold text-gray-900">핵심 차별점</h2>
-          <ul className="mt-3 space-y-2 text-sm text-gray-600">
+          <ul className="mt-3 space-y-2 text-sm leading-6 text-gray-600">
             {differentiators.map((item) => (
               <li key={item}>{item}</li>
             ))}

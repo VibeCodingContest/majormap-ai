@@ -1,4 +1,5 @@
 import { careerMap, courseMap, courses, skillTagLabels } from "./sample-data";
+import { analyzeCareerGradeSignals } from "./scoring";
 import {
   Career,
   Course,
@@ -7,6 +8,7 @@ import {
   PlanResult,
   PlannedCourse,
   PlannedSemester,
+  TargetCredits,
 } from "./types";
 
 function termMatches(offeredIn: Course["offeredIn"], semester: "1" | "2") {
@@ -43,8 +45,17 @@ function getTermSequence(
     ? [{ semester: "2", termLabel: "다음 2학기" }]
     : [
         { semester: "2", termLabel: "다음 2학기" },
-        { semester: "1", termLabel: "차다음 1학기" },
+        { semester: "1", termLabel: "그 다음 1학기" },
       ];
+}
+
+function getTargetCreditsForSemester(
+  request: PlanRequest,
+  semesterIndex: number
+): TargetCredits {
+  const first = request.firstSemesterTargetCredits ?? request.targetCredits;
+  const second = request.secondSemesterTargetCredits ?? first;
+  return semesterIndex === 0 ? first : second;
 }
 
 function getOwnedTags(courseIds: string[]) {
@@ -104,7 +115,7 @@ function buildWhyNow(
   completedCourseIds: Set<string>
 ) {
   if (course.offeredIn === semester) {
-    return "다음 학기에 개설되는 과목이라 지금 우선 배치했습니다.";
+    return "다음 학기에 개설되는 과목이므로 지금 우선 배치했습니다.";
   }
 
   if ((course.prerequisites?.length ?? 0) > 0) {
@@ -136,7 +147,7 @@ function buildDeferredReason(
     return "선택한 학기 수와 학점 한도 안에서 우선순위가 밀려 다음 학기로 이월했습니다.";
   }
 
-  return "개설 학기와 학점 한도를 고려할 때 이번 계획 범위를 넘어 deferred 처리했습니다.";
+  return "개설 학기와 학점 한도를 고려할 때 이번 계획 범위를 넘어 후순위로 보류했습니다.";
 }
 
 function buildCreditGapGuidance(
@@ -197,19 +208,61 @@ export function buildPlan(request: PlanRequest): PlanResult {
   );
 
   const completedCourseIds = new Set(request.takenCourseIds);
+  const completedCourses = request.takenCourseIds
+    .map((courseId) => courseMap[courseId])
+    .filter((course): course is Course => Boolean(course));
   const plannedCourseIds = new Set<string>();
   const termSequence = getTermSequence(
     request.nextSemester,
     request.semesterCount
   );
+  const gradeSignals = analyzeCareerGradeSignals(career, completedCourses, request);
+  const selectedRetakeCourseIds = request.includeRetakeCourses
+    ? Array.from(new Set(request.retakeCourseIds ?? gradeSignals.retakeCourseIds))
+    : [];
+  const selectedRetakeCourses = selectedRetakeCourseIds
+    .map((courseId) => courseMap[courseId])
+    .filter((course): course is Course => Boolean(course));
 
-  const semesters: PlannedSemester[] = termSequence.map((term) => {
+  const semesters: PlannedSemester[] = termSequence.map((term, semesterIndex) => {
+    const targetCredits = getTargetCreditsForSemester(request, semesterIndex);
     const ownedTags = getOwnedTags(Array.from(completedCourseIds));
     const missingRequiredTags = career.requiredTags.filter(
       (tag) => !ownedTags.includes(tag)
     );
     const selectedCourses: PlannedCourse[] = [];
     let totalCredits = 0;
+
+    if (selectedRetakeCourseIds.length > 0) {
+      const retakeCandidates = selectedRetakeCourses
+        .filter(
+          (course) =>
+            termMatches(course.offeredIn, term.semester) &&
+            (request.includeLiberalArts || course.category !== "liberal") &&
+            !plannedCourseIds.has(course.id)
+        )
+        .sort((a, b) => a.code.localeCompare(b.code));
+
+      for (const course of retakeCandidates) {
+        if (totalCredits + course.credits > targetCredits) {
+          continue;
+        }
+
+        selectedCourses.push({
+          courseId: course.id,
+          name: course.name,
+          credits: course.credits,
+          reason: "재수강 권장 과목",
+          whyNow:
+            semesterIndex === 0
+              ? "저성적 보완을 위해 다음 학기에 우선 반영했습니다."
+              : "저성적 보완을 위해 이 학기에도 재수강 우선 반영했습니다.",
+          isRetake: true,
+        });
+        totalCredits += course.credits;
+        plannedCourseIds.add(course.id);
+      }
+    }
 
     const sortedCandidates = availableCourses
       .filter(
@@ -254,7 +307,7 @@ export function buildPlan(request: PlanRequest): PlanResult {
       });
 
     for (const course of sortedCandidates) {
-      if (totalCredits + course.credits > request.targetCredits) {
+      if (totalCredits + course.credits > targetCredits) {
         continue;
       }
 
@@ -270,7 +323,7 @@ export function buildPlan(request: PlanRequest): PlanResult {
     }
 
     selectedCourses.forEach((course) => completedCourseIds.add(course.courseId));
-    const remainingCredits = Math.max(request.targetCredits - totalCredits, 0);
+    const remainingCredits = Math.max(targetCredits - totalCredits, 0);
     const creditGapGuidance = buildCreditGapGuidance(
       request,
       term.semester,
@@ -282,12 +335,42 @@ export function buildPlan(request: PlanRequest): PlanResult {
 
     return {
       termLabel: term.termLabel,
+      targetCredits,
       totalCredits,
       remainingCredits,
       courses: selectedCourses,
       creditGapGuidance,
     };
   });
+
+  const retakeUnavailableNotes = selectedRetakeCourses
+    .filter((course) => !plannedCourseIds.has(course.id))
+    .map((course) => {
+      if (!request.includeLiberalArts && course.category === "liberal") {
+        return `${course.name}은(는) 교양 과목이며 '교양 과목 포함' 옵션이 꺼져 있어 이번 계획 범위에는 반영되지 않습니다.`;
+      }
+
+      const offeredLabel =
+        course.offeredIn === "both" ? "매 학기" : `${course.offeredIn}학기`;
+      const hasOfferedTermInPlan = termSequence.some((term) =>
+        termMatches(course.offeredIn, term.semester)
+      );
+
+      if (!hasOfferedTermInPlan) {
+        return `${course.name}은(는) ${offeredLabel} 개설 과목이므로 이번 계획 범위에는 반영되지 않습니다.`;
+      }
+
+      return `${course.name}은(는) 학점 한도 또는 선수과목 조건으로 이번 계획 범위에는 반영되지 않습니다.`;
+    });
+
+  const semestersWithRetakeNotes = semesters.map((semester, index) =>
+    index === 0 && retakeUnavailableNotes.length > 0
+      ? {
+          ...semester,
+          retakeUnavailableNotes: Array.from(new Set(retakeUnavailableNotes)),
+        }
+      : semester
+  );
 
   const deferredCourses: DeferredCourse[] = coreMissingCourseIds
     .filter((courseId) => !plannedCourseIds.has(courseId))
@@ -310,7 +393,8 @@ export function buildPlan(request: PlanRequest): PlanResult {
       summary: career.summary,
     },
     coreMissingCourseIds,
-    semesters,
+    retakeRecommendations: gradeSignals.retakeRecommendations,
+    semesters: semestersWithRetakeNotes,
     deferredCourses,
   };
 }

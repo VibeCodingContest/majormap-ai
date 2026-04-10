@@ -64,9 +64,11 @@ function buildFallback(
   return {
     headline: `${rec.careerName} 적합도 ${rec.score}점`,
     fitSummary: rec.summary,
-    evidence: rec.reasons,
+    evidence: [...rec.reasons, ...rec.recommendationNotes].slice(0, 4),
     caution:
-      rec.missingTags.length > 0
+      rec.lowGradeWarnings.length > 0
+        ? rec.lowGradeWarnings[0]
+        : rec.missingTags.length > 0
         ? `${missingNames} 역량을 보완하면 취업 경쟁력이 크게 향상됩니다.`
         : "현재 역량으로 충분히 진입 가능한 진로입니다.",
     roadmap,
@@ -95,6 +97,9 @@ function buildPrompt(rec: CareerRecommendation, profile: StudentProfile): string
 보유 역량: ${rec.matchedTags.map((t) => skillTagLabels[t] ?? t).join(", ") || "없음"}
 부족 역량: ${rec.missingTags.map((t) => skillTagLabels[t] ?? t).join(", ") || "없음"}
 보완 추천 과목: ${recommendedNames || "없음"}
+저성적 경고: ${rec.lowGradeWarnings.join(" | ") || "없음"}
+재수강 권장: ${rec.retakeRecommendations.join(" | ") || "없음"}
+추천 자격증: ${rec.recommendedCertifications.map((item) => item.name).join(", ") || "없음"}
 
 아래 JSON 형식으로만 응답해주세요. 다른 텍스트는 포함하지 마세요:
 {
