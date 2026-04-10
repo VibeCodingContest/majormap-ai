@@ -61,14 +61,12 @@ export type StudentProfile = {
 };
 
 export type ScoreBreakdown = {
-  requiredTagScore: number;
-  optionalTagScore: number;
+  requiredCoverage: number;
+  optionalCoverage: number;
+  majorFitBonus: number;
   keywordBonus: number;
-  primaryMajorBonus: number;
-  secondaryMajorBonus: number;
-  evidencePenalty: number;
-  requiredCoveragePct: number;
-  optionalCoveragePct: number;
+  gradeAdjustment?: number;
+  evidencePenaltyMultiplier: number;
   relatedCourseCount: number;
   total: number;
 };
@@ -93,6 +91,7 @@ export type CareerRecommendation = {
   coreMissingCourseIds: string[];
   recommendedCourseIds: string[];
   evidenceCourseCount: number;
+  confidenceLevel?: "low" | "medium" | "high";
   confidenceLabel: "낮음" | "보통" | "높음";
   confidenceReason: string;
   lowGradeWarnings: string[];

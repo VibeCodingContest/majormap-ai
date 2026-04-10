@@ -106,13 +106,39 @@ export function ResultCard({
       : result.score >= 40
       ? "text-yellow-600"
       : "text-red-500";
+  const confidenceLevel =
+    result.confidenceLevel ??
+    (result.confidenceLabel === "높음"
+      ? "high"
+      : result.confidenceLabel === "보통"
+      ? "medium"
+      : "low");
+  const confidenceLabelText =
+    confidenceLevel === "high"
+      ? "근거 높음"
+      : confidenceLevel === "medium"
+      ? "근거 보통"
+      : "근거 낮음";
 
   const confidenceColor =
-    result.confidenceLabel === "높음"
+    confidenceLevel === "high"
       ? "bg-emerald-100 text-emerald-700"
-      : result.confidenceLabel === "보통"
+      : confidenceLevel === "medium"
       ? "bg-amber-100 text-amber-700"
       : "bg-red-100 text-red-700";
+  const requiredCoveragePct = Math.round(
+    result.scoreBreakdown.requiredCoverage * 100
+  );
+  const optionalCoveragePct = Math.round(
+    result.scoreBreakdown.optionalCoverage * 100
+  );
+  const evidenceMultiplierPct = Math.round(
+    result.scoreBreakdown.evidencePenaltyMultiplier * 100
+  );
+  const scoreSummaryLine =
+    result.scoreBreakdown.evidencePenaltyMultiplier < 1
+      ? "핵심 역량 일부 충족 상태이며 관련 과목 수가 아직 적어 점수가 보수적으로 조정되었습니다."
+      : "핵심 역량과 관련 과목 근거가 충분해 점수 보정 없이 계산되었습니다.";
   const priorityLabelMap = {
     high: "우선",
     medium: "권장",
@@ -130,7 +156,7 @@ export function ResultCard({
             <span
               className={`rounded-full px-2.5 py-1 text-xs font-semibold ${confidenceColor}`}
             >
-              근거 충분도 {result.confidenceLabel}
+              {confidenceLabelText}
             </span>
             <span className="text-xs text-gray-500">
               관련 이수 과목 {result.evidenceCourseCount}개
@@ -138,7 +164,7 @@ export function ResultCard({
           </div>
         </div>
         <div className="shrink-0 text-right">
-          <p className="text-xs font-medium text-gray-400">추천 적합도</p>
+          <p className="text-xs font-medium text-gray-400">탐색 적합도</p>
           <span className={`text-2xl font-extrabold ${scoreColor}`}>
             {result.score}
           </span>
@@ -147,34 +173,31 @@ export function ResultCard({
       </div>
 
       {/* 점수 세부 내역 */}
-      <div className="mt-3 grid grid-cols-2 gap-2 rounded-lg bg-gray-50 p-3 text-xs sm:grid-cols-5">
+      <div className="mt-3 grid grid-cols-2 gap-2 rounded-lg bg-gray-50 p-3 text-xs sm:grid-cols-3 lg:grid-cols-6">
         <div>
           <p className="text-gray-400">필수 커버리지</p>
-          <p className="font-semibold">{result.scoreBreakdown.requiredCoveragePct}%</p>
+          <p className="font-semibold">{requiredCoveragePct}%</p>
         </div>
         <div>
           <p className="text-gray-400">선택 커버리지</p>
-          <p className="font-semibold">{result.scoreBreakdown.optionalCoveragePct}%</p>
+          <p className="font-semibold">{optionalCoveragePct}%</p>
         </div>
         <div>
-          <p className="text-gray-400">필수/선택 점수</p>
-          <p className="font-semibold">{result.scoreBreakdown.requiredTagScore}점</p>
-          <p className="text-[11px] text-gray-400">
-            선택 {result.scoreBreakdown.optionalTagScore}점
-          </p>
+          <p className="text-gray-400">전공 정합성</p>
+          <p className="font-semibold">+{result.scoreBreakdown.majorFitBonus}점</p>
         </div>
         <div>
           <p className="text-gray-400">키워드</p>
           <p className="font-semibold">+{result.scoreBreakdown.keywordBonus}점</p>
         </div>
         <div>
-          <p className="text-gray-400">전공 적합도</p>
-          <p className="font-semibold">
-            +{result.scoreBreakdown.primaryMajorBonus + result.scoreBreakdown.secondaryMajorBonus}점
-          </p>
-          <p className="text-[11px] text-gray-400">
-            보정 {result.scoreBreakdown.evidencePenalty}점
-          </p>
+          <p className="text-gray-400">성적 보정</p>
+          <p className="font-semibold">{result.scoreBreakdown.gradeAdjustment ?? 0}점</p>
+        </div>
+        <div>
+          <p className="text-gray-400">근거 보정</p>
+          <p className="font-semibold">x{result.scoreBreakdown.evidencePenaltyMultiplier}</p>
+          <p className="text-[11px] text-gray-400">{evidenceMultiplierPct}% 반영</p>
         </div>
       </div>
 
@@ -182,6 +205,7 @@ export function ResultCard({
         <p className="text-xs font-semibold text-indigo-600">추천 요약</p>
         <p className="mt-1 text-sm text-gray-700">{result.reasonSummary}</p>
         <p className="mt-2 text-xs text-indigo-700">{result.confidenceReason}</p>
+        <p className="mt-2 text-xs text-indigo-700">{scoreSummaryLine}</p>
       </div>
 
       {result.scoreAdjustments && result.scoreAdjustments.length > 0 && (
