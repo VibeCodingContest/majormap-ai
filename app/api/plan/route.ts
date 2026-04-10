@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { validateTakenCourseGradePolicy } from "@/lib/grade-policy";
 import { buildPlan } from "@/lib/planning";
 import { PlanApiResponse, PlanRequest } from "@/lib/types";
 
@@ -72,6 +73,22 @@ export async function POST(req: Request) {
         )
       : [];
 
+    const baseTargetCredits =
+      typeof body.targetCredits === "number" &&
+      VALID_TARGET_CREDITS.has(body.targetCredits)
+        ? body.targetCredits
+        : 15;
+    const firstSemesterTargetCredits =
+      typeof body.firstSemesterTargetCredits === "number" &&
+      VALID_TARGET_CREDITS.has(body.firstSemesterTargetCredits)
+        ? body.firstSemesterTargetCredits
+        : baseTargetCredits;
+    const secondSemesterTargetCredits =
+      typeof body.secondSemesterTargetCredits === "number" &&
+      VALID_TARGET_CREDITS.has(body.secondSemesterTargetCredits)
+        ? body.secondSemesterTargetCredits
+        : firstSemesterTargetCredits;
+
     const request: PlanRequest = {
       studentYearTrack: body.studentYearTrack ?? "2024",
       primaryMajor: body.primaryMajor ?? "컴퓨터공학",
@@ -82,15 +99,28 @@ export async function POST(req: Request) {
         ? body.interestKeywords
         : [],
       careerId: body.careerId,
-      targetCredits:
-        typeof body.targetCredits === "number" &&
-        VALID_TARGET_CREDITS.has(body.targetCredits)
-          ? body.targetCredits
-          : 15,
+      targetCredits: baseTargetCredits,
+      firstSemesterTargetCredits,
+      secondSemesterTargetCredits,
       semesterCount: body.semesterCount === 2 ? 2 : 1,
       includeLiberalArts: Boolean(body.includeLiberalArts),
+      includeRetakeCourses: Boolean(body.includeRetakeCourses),
+      retakeCourseIds: Array.isArray(body.retakeCourseIds)
+        ? body.retakeCourseIds.filter(
+            (courseId: unknown): courseId is string =>
+              typeof courseId === "string"
+          )
+        : undefined,
       nextSemester: body.nextSemester === "2" ? "2" : "1",
     };
+    const gradePolicyError = validateTakenCourseGradePolicy(request.takenCourses);
+
+    if (gradePolicyError) {
+      return NextResponse.json<PlanApiResponse>(
+        { error: gradePolicyError },
+        { status: 400 }
+      );
+    }
 
     const result = buildPlan(request);
     return NextResponse.json<PlanApiResponse>({ result });

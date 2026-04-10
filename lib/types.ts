@@ -9,7 +9,17 @@ export type Course = {
   majors: string[];
   tags: string[];
   description: string;
+  gradingType?: "standard" | "fp";
+  isCore?: boolean;
+  isMajorImportant?: boolean;
+  retakeThreshold?: GradeValue;
   prerequisites?: string[];
+};
+
+export type CertificationRecommendation = {
+  name: string;
+  reason: string;
+  priority?: "high" | "medium" | "low";
 };
 
 export type Career = {
@@ -21,6 +31,7 @@ export type Career = {
   coreCourseIds: string[];
   preferredMajors?: string[];
   keywordAliases?: string[];
+  recommendedCertifications?: CertificationRecommendation[];
 };
 
 export type GradeValue =
@@ -62,6 +73,11 @@ export type ScoreBreakdown = {
   total: number;
 };
 
+export type ScoreAdjustment = {
+  reason: string;
+  delta: number;
+};
+
 export type CareerRecommendation = {
   careerId: string;
   careerName: string;
@@ -79,6 +95,12 @@ export type CareerRecommendation = {
   evidenceCourseCount: number;
   confidenceLabel: "낮음" | "보통" | "높음";
   confidenceReason: string;
+  lowGradeWarnings: string[];
+  retakeRecommendations: string[];
+  retakeCourseIds: string[];
+  recommendationNotes: string[];
+  recommendedCertifications: CertificationRecommendation[];
+  scoreAdjustments?: ScoreAdjustment[];
 };
 
 export type DemoProfile = {
@@ -115,14 +137,23 @@ export type TargetCredits =
 export type PlanRequest = StudentProfile & {
   careerId: string;
   targetCredits: TargetCredits;
+  firstSemesterTargetCredits?: TargetCredits;
+  secondSemesterTargetCredits?: TargetCredits;
   semesterCount: 1 | 2;
   includeLiberalArts: boolean;
+  includeRetakeCourses?: boolean;
+  retakeCourseIds?: string[];
   nextSemester: "1" | "2";
 };
 
 export type PlanOptions = Pick<
   PlanRequest,
-  "nextSemester" | "targetCredits" | "semesterCount" | "includeLiberalArts"
+  | "nextSemester"
+  | "targetCredits"
+  | "firstSemesterTargetCredits"
+  | "secondSemesterTargetCredits"
+  | "semesterCount"
+  | "includeLiberalArts"
 >;
 
 export type PlannedCourse = {
@@ -131,6 +162,7 @@ export type PlannedCourse = {
   credits: number;
   reason: string;
   whyNow: string;
+  isRetake?: boolean;
 };
 
 export type CreditGapGuidance = {
@@ -141,9 +173,11 @@ export type CreditGapGuidance = {
 
 export type PlannedSemester = {
   termLabel: string;
+  targetCredits: TargetCredits;
   totalCredits: number;
   remainingCredits: number;
   courses: PlannedCourse[];
+  retakeUnavailableNotes?: string[];
   creditGapGuidance?: CreditGapGuidance;
 };
 
@@ -159,6 +193,7 @@ export type PlanResult = {
     summary: string;
   };
   coreMissingCourseIds: string[];
+  retakeRecommendations: string[];
   semesters: PlannedSemester[];
   deferredCourses: DeferredCourse[];
 };

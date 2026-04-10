@@ -3,6 +3,7 @@ import {
   Course,
   GradeValue,
   ScoreBreakdown,
+  ScoreAdjustment,
   StudentProfile,
 } from "./types";
 import { skillTagLabels } from "./sample-data";
@@ -14,6 +15,7 @@ const KEYWORD_BONUS_MAX = 8;
 const PRIMARY_MAJOR_BONUS = 4;
 const SECONDARY_MAJOR_BONUS = 2;
 const DEFAULT_GRADE_WEIGHT = 1;
+const LOW_GRADE_THRESHOLD: GradeValue = "C+";
 const GRADE_WEIGHTS: Record<GradeValue, number> = {
   "A+": 1,
   A0: 0.98,
@@ -26,6 +28,17 @@ const GRADE_WEIGHTS: Record<GradeValue, number> = {
   F: 0,
   P: 0.72,
 };
+const GRADE_RANKS: Record<Exclude<GradeValue, "P">, number> = {
+  F: 0,
+  D0: 1,
+  "D+": 2,
+  C0: 3,
+  "C+": 4,
+  B0: 5,
+  "B+": 6,
+  A0: 7,
+  "A+": 8,
+};
 
 function normalizeKeyword(value: string) {
   return value.trim().toLowerCase();
@@ -33,6 +46,40 @@ function normalizeKeyword(value: string) {
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
+}
+
+export function gradeToRank(grade?: GradeValue): number | null {
+  if (!grade || grade === "P") {
+    return null;
+  }
+
+  return GRADE_RANKS[grade];
+}
+
+export function isLowGrade(
+  grade?: GradeValue,
+  threshold: GradeValue = LOW_GRADE_THRESHOLD
+) {
+  const gradeRank = gradeToRank(grade);
+  const thresholdRank = gradeToRank(threshold);
+
+  if (gradeRank === null || thresholdRank === null) {
+    return false;
+  }
+
+  return gradeRank <= thresholdRank;
+}
+
+export function isRetakeRecommended(course: Course, grade?: GradeValue) {
+  const threshold =
+    course.retakeThreshold ??
+    (course.isCore || course.isMajorImportant ? LOW_GRADE_THRESHOLD : undefined);
+
+  if (!threshold) {
+    return false;
+  }
+
+  return isLowGrade(grade, threshold);
 }
 
 function getCourseWeightMap(profile: StudentProfile) {
@@ -44,11 +91,139 @@ function getCourseWeightMap(profile: StudentProfile) {
   );
 }
 
+function getTakenCourseGradeMap(profile: StudentProfile) {
+  return new Map(
+    profile.takenCourses.map((course) => [course.courseId, course.grade])
+  );
+}
+
+function getPenaltyDelta(course: Course, grade: GradeValue) {
+  if (grade === "F") {
+    return course.isCore ? -20 : -12;
+  }
+
+  if (isLowGrade(grade, "C0")) {
+    return course.isCore ? -12 : -8;
+  }
+
+  return course.isCore ? -8 : -5;
+}
+
+function getCareerDirectPenaltyDelta(grade: GradeValue) {
+  if (grade === "F") {
+    return -8;
+  }
+
+  if (isLowGrade(grade, "C0")) {
+    return -6;
+  }
+
+  return -4;
+}
+
+function getCourseLabel(course: Course) {
+  return course.isCore ? "핵심 과목" : "주요 과목";
+}
+
+export function analyzeCareerGradeSignals(
+  career: Career,
+  takenCourses: Course[],
+  profile: StudentProfile
+) {
+  const takenCourseGradeMap = getTakenCourseGradeMap(profile);
+  const lowGradeWarnings: string[] = [];
+  const retakeRecommendations: string[] = [];
+  const retakeCourseIds: string[] = [];
+  const recommendationNotes: string[] = [];
+  const scoreAdjustments: ScoreAdjustment[] = [];
+  let totalPenalty = 0;
+  let hasDirectCareerPenalty = false;
+
+  for (const course of takenCourses) {
+    const grade = takenCourseGradeMap.get(course.id);
+
+    if (!grade || grade === "P") {
+      continue;
+    }
+
+    if (!course.isCore && !course.isMajorImportant) {
+      continue;
+    }
+
+    const threshold = course.retakeThreshold ?? LOW_GRADE_THRESHOLD;
+    if (!isLowGrade(grade, threshold)) {
+      continue;
+    }
+
+    const courseLabel = getCourseLabel(course);
+    const directlyRelevant =
+      career.coreCourseIds.includes(course.id) ||
+      course.tags.some(
+        (tag) =>
+          career.requiredTags.includes(tag) || career.optionalTags.includes(tag)
+      );
+
+    let delta = getPenaltyDelta(course, grade);
+
+    if (career.coreCourseIds.includes(course.id)) {
+      delta += getCareerDirectPenaltyDelta(grade);
+      hasDirectCareerPenalty = true;
+    }
+
+    totalPenalty += delta;
+    scoreAdjustments.push({
+      reason: `${courseLabel} ${course.name} 성적 ${grade} 반영`,
+      delta,
+    });
+
+    lowGradeWarnings.push(
+      directlyRelevant
+        ? `${courseLabel}인 ${course.name}의 성적이 ${grade}로 확인되어, ${career.name} 진로 준비도에 불리하게 작용합니다.`
+        : `${courseLabel}인 ${course.name}의 성적이 ${grade}로 확인되어, 관련 역량 평가에 주의가 필요합니다.`
+    );
+
+    if (isRetakeRecommended(course, grade)) {
+      retakeCourseIds.push(course.id);
+      retakeRecommendations.push(
+        `${course.name}은(는) 후속 학습의 기반이 되는 과목이라 재수강 또는 보완 학습을 권장합니다.`
+      );
+    }
+  }
+
+  if (scoreAdjustments.length > 0) {
+    recommendationNotes.push(
+      "주요 과목 성취도가 낮아 현재 추천 점수에 감점이 반영되었습니다."
+    );
+  }
+
+  if (hasDirectCareerPenalty) {
+    recommendationNotes.push(
+      "선택한 진로와 직접 연결되는 핵심 과목의 저성적이 추가 감점으로 반영되었습니다."
+    );
+  }
+
+  if (retakeRecommendations.length > 0) {
+    recommendationNotes.push(
+      "후속 학습의 기반이 되는 과목은 재수강 또는 보완 학습을 우선 검토하는 편이 좋습니다."
+    );
+  }
+
+  return {
+    totalPenalty,
+    lowGradeWarnings: Array.from(new Set(lowGradeWarnings)),
+    retakeRecommendations: Array.from(new Set(retakeRecommendations)),
+    retakeCourseIds: Array.from(new Set(retakeCourseIds)),
+    recommendationNotes: Array.from(new Set(recommendationNotes)),
+    scoreAdjustments,
+  };
+}
+
 export function calcScore(
   career: Career,
   takenCourses: Course[],
   profile: StudentProfile
 ): ScoreBreakdown {
+  // TODO: 향후 course-level penalty를 넘어서 전체 grade distribution도 함께 반영 가능
   const courseWeightMap = getCourseWeightMap(profile);
   const tagStrengthMap = new Map<string, number>();
 

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { validateTakenCourseGradePolicy } from "@/lib/grade-policy";
 import { recommendCareers } from "@/lib/recommendation";
 import { RecommendApiResponse, StudentProfile } from "@/lib/types";
 
@@ -54,6 +55,14 @@ export async function POST(req: Request) {
       takenCourseIds,
       interestKeywords: Array.isArray(body.interestKeywords) ? body.interestKeywords : [],
     };
+    const gradePolicyError = validateTakenCourseGradePolicy(profile.takenCourses);
+
+    if (gradePolicyError) {
+      return NextResponse.json<RecommendApiResponse>(
+        { error: gradePolicyError },
+        { status: 400 }
+      );
+    }
 
     const results = recommendCareers(profile);
     return NextResponse.json<RecommendApiResponse>({ results });

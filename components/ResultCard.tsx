@@ -15,6 +15,8 @@ type Props = {
   profile: StudentProfile;
   onPlanSelect: (result: CareerRecommendation) => void;
   isPlanSelected: boolean;
+  selectedRetakeCourseIds: string[];
+  onRetakeCourseToggle: (courseId: string, checked: boolean) => void;
   children?: ReactNode;
 };
 
@@ -34,6 +36,8 @@ export function ResultCard({
   profile,
   onPlanSelect,
   isPlanSelected,
+  selectedRetakeCourseIds,
+  onRetakeCourseToggle,
   children,
 }: Props) {
   const [explainData, setExplainData] = useState<ExplainResponse | null>(null);
@@ -109,6 +113,11 @@ export function ResultCard({
       : result.confidenceLabel === "보통"
       ? "bg-amber-100 text-amber-700"
       : "bg-red-100 text-red-700";
+  const priorityLabelMap = {
+    high: "우선",
+    medium: "권장",
+    low: "참고",
+  } as const;
 
   return (
     <div className="rounded-xl border bg-white p-5 shadow-sm">
@@ -174,6 +183,23 @@ export function ResultCard({
         <p className="mt-1 text-sm text-gray-700">{result.reasonSummary}</p>
         <p className="mt-2 text-xs text-indigo-700">{result.confidenceReason}</p>
       </div>
+
+      {result.scoreAdjustments && result.scoreAdjustments.length > 0 && (
+        <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+          <p className="text-xs font-semibold text-amber-800">점수 조정</p>
+          <ul className="mt-2 space-y-1">
+            {result.scoreAdjustments.map((adjustment) => (
+              <li
+                key={`${adjustment.reason}-${adjustment.delta}`}
+                className="flex items-start justify-between gap-3 text-xs text-amber-900"
+              >
+                <span>{adjustment.reason}</span>
+                <span className="shrink-0 font-semibold">{adjustment.delta}점</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* 역량 배지 */}
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -263,6 +289,73 @@ export function ResultCard({
         </div>
       )}
 
+      {result.lowGradeWarnings.length > 0 && (
+        <div className="mt-3 rounded-lg border border-orange-200 bg-orange-50 px-4 py-3">
+          <p className="text-xs font-semibold text-orange-800">주의</p>
+          <ul className="mt-2 space-y-1">
+            {result.lowGradeWarnings.map((warning) => (
+              <li key={warning} className="text-sm text-orange-900">
+                {warning}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {result.retakeRecommendations.length > 0 && (
+        <div className="mt-3 rounded-lg border border-sky-200 bg-sky-50 px-4 py-3">
+          <p className="text-xs font-semibold text-sky-700">재수강 권장</p>
+          <ul className="mt-2 space-y-1">
+            {result.retakeRecommendations.map((recommendation) => (
+              <li key={recommendation} className="text-sm text-sky-900">
+                {recommendation}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {result.recommendationNotes.length > 0 && (
+        <div className="mt-3">
+          <p className="mb-1 text-xs font-semibold text-gray-500">보완 권장</p>
+          <ul className="space-y-1">
+            {result.recommendationNotes.map((note) => (
+              <li key={note} className="text-sm text-gray-600">
+                {note}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {result.recommendedCertifications.length > 0 && (
+        <div className="mt-3">
+          <p className="mb-1 text-xs font-semibold text-gray-500">추천 자격증</p>
+          <div className="space-y-2">
+            {result.recommendedCertifications.map((certification) => (
+              <div
+                key={certification.name}
+                className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-sm font-semibold text-gray-900">
+                    {certification.name}
+                  </p>
+                  {certification.priority && (
+                    <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-gray-500">
+                      {priorityLabelMap[certification.priority]}
+                    </span>
+                  )}
+                </div>
+                <p className="mt-1 text-xs text-gray-600">
+                  {certification.reason}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* AI 해설 버튼 */}
       <div className="mt-4 border-t pt-4">
         <div className="flex flex-wrap gap-2">
@@ -289,6 +382,39 @@ export function ResultCard({
               : "AI 해설 보기"}
           </button>
         </div>
+        {result.retakeCourseIds.length > 0 && (
+          <div className="mt-3 rounded-lg border border-sky-200 bg-sky-50 px-3 py-3">
+            <p className="text-xs font-semibold text-sky-800">
+              재수강 반영 과목 선택
+            </p>
+            <p className="mt-1 text-xs text-sky-700">
+              선택한 과목만 다음 학기 계획에 우선 반영됩니다.
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {result.retakeCourseIds.map((courseId) => {
+                const checked = selectedRetakeCourseIds.includes(courseId);
+                const courseName = courseMap[courseId]?.name ?? courseId;
+
+                return (
+                  <label
+                    key={courseId}
+                    className="flex cursor-pointer items-center gap-2 rounded-md border border-sky-300 bg-white px-2.5 py-1.5 text-xs text-sky-900"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={(e) =>
+                        onRetakeCourseToggle(courseId, e.target.checked)
+                      }
+                      className="h-3.5 w-3.5 accent-sky-600"
+                    />
+                    {courseName}
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        )}
         {explainError && (
           <p className="mt-2 text-xs text-red-500">{explainError}</p>
         )}

@@ -1,7 +1,11 @@
 import { careers, courses } from "./sample-data";
-import { buildReasons, calcScore } from "./scoring";
+import { analyzeCareerGradeSignals, buildReasons, calcScore } from "./scoring";
 import { skillTagLabels } from "./sample-data";
 import { CareerRecommendation, StudentProfile } from "./types";
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
 
 export function recommendCareers(profile: StudentProfile): CareerRecommendation[] {
   const takenCourseIds = Array.from(
@@ -32,7 +36,17 @@ export function recommendCareers(profile: StudentProfile): CareerRecommendation[
         )
     );
 
-    const scoreBreakdown = calcScore(career, takenCourses, profile);
+    const baseScoreBreakdown = calcScore(career, takenCourses, profile);
+    const gradeSignals = analyzeCareerGradeSignals(career, takenCourses, profile);
+    const adjustedTotal = clamp(
+      baseScoreBreakdown.total + gradeSignals.totalPenalty,
+      0,
+      100
+    );
+    const scoreBreakdown = {
+      ...baseScoreBreakdown,
+      total: adjustedTotal,
+    };
     const reasons = buildReasons(
       career,
       [...matchedRequired, ...matchedOptional],
@@ -54,7 +68,9 @@ export function recommendCareers(profile: StudentProfile): CareerRecommendation[
     const isLowFit = scoreBreakdown.total < 40;
 
     const confidenceReason =
-      isLowFit
+      gradeSignals.lowGradeWarnings.length > 0
+        ? `${gradeSignals.lowGradeWarnings[0]} ${gradeSignals.recommendationNotes[0] ?? ""}`.trim()
+        : isLowFit
         ? `현재 이수 과목 기준으로는 ${career.name} 진로와의 적합도가 낮습니다. 관련 근거가 약하고 핵심 역량 공백이 커서 바로 추천하기 어렵습니다.`
         : confidenceLabel === "낮음"
         ? `관련 이수 과목이 ${evidenceCourseCount}개라 현재 추천 근거가 아직 얇습니다.`
@@ -76,6 +92,8 @@ export function recommendCareers(profile: StudentProfile): CareerRecommendation[
     const reasonSummary =
       isLowFit
         ? `${career.name} 기준 현재 적합도는 낮은 편입니다. 핵심 과목과 필수 역량이 꽤 비어 있어 당장 이 방향으로 판단하기에는 무리가 있습니다. ${confidenceReason}`
+        : gradeSignals.scoreAdjustments.length > 0
+        ? `${career.name} 기준 기본 적합도는 확인되지만, 핵심/주요 과목 성취도에 따른 감점이 반영되었습니다. ${confidenceReason}`
         : coreMissingCourseIds.length > 0
         ? `${career.name} 기준 핵심 과목 ${coreMissingCourseIds.length}개와 부족 역량 보완 과목을 바로 이어서 추천할 수 있습니다. ${confidenceReason}`
         : `${career.name} 기준 핵심 역량을 대부분 충족하고 있어 다음 학기 계획으로 바로 연결하기 좋습니다. ${confidenceReason}`;
@@ -97,6 +115,12 @@ export function recommendCareers(profile: StudentProfile): CareerRecommendation[
       evidenceCourseCount,
       confidenceLabel,
       confidenceReason,
+      lowGradeWarnings: gradeSignals.lowGradeWarnings,
+      retakeRecommendations: gradeSignals.retakeRecommendations,
+      retakeCourseIds: gradeSignals.retakeCourseIds,
+      recommendationNotes: gradeSignals.recommendationNotes,
+      recommendedCertifications: career.recommendedCertifications ?? [],
+      scoreAdjustments: gradeSignals.scoreAdjustments,
     } satisfies CareerRecommendation;
   });
 

@@ -27,6 +27,8 @@ export const courses: Course[] = [
     majors: ["컴퓨터공학"],
     tags: ["programming", "problem-solving"],
     description: "기초 프로그래밍과 문제 해결 역량을 학습한다.",
+    isCore: true,
+    retakeThreshold: "C+",
   },
   {
     id: "cs201",
@@ -39,6 +41,8 @@ export const courses: Course[] = [
     majors: ["컴퓨터공학"],
     tags: ["algorithms", "problem-solving"],
     description: "자료구조와 알고리즘 기초를 다룬다.",
+    isCore: true,
+    retakeThreshold: "C+",
     prerequisites: ["cs101"],
   },
   {
@@ -52,6 +56,8 @@ export const courses: Course[] = [
     majors: ["컴퓨터공학"],
     tags: ["algorithms", "system-design"],
     description: "운영체제의 프로세스, 메모리, 파일 시스템을 다룬다.",
+    isCore: true,
+    retakeThreshold: "C+",
     prerequisites: ["cs201"],
   },
   {
@@ -65,6 +71,8 @@ export const courses: Course[] = [
     majors: ["컴퓨터공학"],
     tags: ["programming", "data-analysis", "system-design"],
     description: "관계형 DB 설계와 SQL 쿼리 최적화를 학습한다.",
+    isCore: true,
+    retakeThreshold: "C+",
     prerequisites: ["cs101"],
   },
   {
@@ -78,6 +86,8 @@ export const courses: Course[] = [
     majors: ["컴퓨터공학"],
     tags: ["system-design", "communication", "problem-solving"],
     description: "요구사항 분석, 설계 패턴, 팀 협업 방법론을 다룬다.",
+    isMajorImportant: true,
+    retakeThreshold: "C+",
     prerequisites: ["cs201"],
   },
   // 컴퓨터공학 2024 전용 신설 과목
@@ -92,6 +102,8 @@ export const courses: Course[] = [
     majors: ["컴퓨터공학"],
     tags: ["algorithms", "problem-solving"],
     description: "2024 트랙 전용 알고리즘 심화 과목.",
+    isCore: true,
+    retakeThreshold: "C+",
     prerequisites: ["cs201"],
   },
   {
@@ -105,6 +117,8 @@ export const courses: Course[] = [
     majors: ["컴퓨터공학"],
     tags: ["system-design", "programming"],
     description: "2024 트랙 전용. AWS/GCP 기반 클라우드 인프라를 다룬다.",
+    isMajorImportant: true,
+    retakeThreshold: "C+",
     prerequisites: ["cs302"],
   },
   // 경영학 공통
@@ -119,6 +133,8 @@ export const courses: Course[] = [
     majors: ["경영학"],
     tags: ["business", "strategy"],
     description: "경영 전반의 기본 개념을 학습한다.",
+    isCore: true,
+    retakeThreshold: "C+",
   },
   {
     id: "biz210",
@@ -131,6 +147,8 @@ export const courses: Course[] = [
     majors: ["경영학"],
     tags: ["marketing", "communication"],
     description: "시장 분석과 마케팅 전략 수립을 다룬다.",
+    isMajorImportant: true,
+    retakeThreshold: "C+",
     prerequisites: ["biz101"],
   },
   {
@@ -144,6 +162,8 @@ export const courses: Course[] = [
     majors: ["경영학"],
     tags: ["strategy", "business", "communication"],
     description: "기업의 경쟁 전략 수립과 사례 분석을 다룬다.",
+    isCore: true,
+    retakeThreshold: "C+",
     prerequisites: ["biz101"],
   },
   {
@@ -157,6 +177,8 @@ export const courses: Course[] = [
     majors: ["경영학"],
     tags: ["strategy", "communication", "problem-solving"],
     description: "IT 프로젝트의 범위·일정·리스크 관리를 다룬다.",
+    isMajorImportant: true,
+    retakeThreshold: "C+",
     prerequisites: ["biz101"],
   },
   // 데이터/분석 과목
@@ -171,6 +193,8 @@ export const courses: Course[] = [
     majors: ["컴퓨터공학", "경영학"],
     tags: ["data-analysis", "statistics"],
     description: "데이터 분석 및 통계 기반 의사결정을 다룬다.",
+    isMajorImportant: true,
+    retakeThreshold: "C+",
   },
   {
     id: "ie302",
@@ -183,6 +207,8 @@ export const courses: Course[] = [
     majors: ["경영학", "컴퓨터공학"],
     tags: ["statistics", "data-analysis"],
     description: "기초 통계와 확률론, 회귀 분석을 다룬다.",
+    isMajorImportant: true,
+    retakeThreshold: "C+",
   },
   {
     id: "ie401",
@@ -195,6 +221,8 @@ export const courses: Course[] = [
     majors: ["컴퓨터공학"],
     tags: ["data-analysis", "algorithms", "statistics"],
     description: "2024 트랙 전용. 지도/비지도 학습 기초를 다룬다.",
+    isMajorImportant: true,
+    retakeThreshold: "C+",
     prerequisites: ["ie301", "ie302"],
   },
   // 컨설팅 관련
@@ -209,6 +237,8 @@ export const courses: Course[] = [
     majors: ["경영학"],
     tags: ["consulting", "strategy", "communication"],
     description: "기업 문제 진단 및 솔루션 제안 방법론을 다룬다.",
+    isMajorImportant: true,
+    retakeThreshold: "C+",
     prerequisites: ["biz301"],
   },
   // 교양 과목
@@ -223,6 +253,9 @@ export const courses: Course[] = [
     majors: ["컴퓨터공학", "경영학"],
     tags: ["communication", "problem-solving"],
     description: "발표, 설득, 협업 커뮤니케이션 역량을 강화한다.",
+    gradingType: "fp",
+    isMajorImportant: true,
+    retakeThreshold: "C+",
   },
   {
     id: "la102",
@@ -235,6 +268,9 @@ export const courses: Course[] = [
     majors: ["컴퓨터공학", "경영학"],
     tags: ["data-analysis", "problem-solving"],
     description: "디지털 도구 활용과 데이터 기반 사고를 다진다.",
+    gradingType: "fp",
+    isMajorImportant: true,
+    retakeThreshold: "C+",
   },
 ];
 
@@ -248,6 +284,23 @@ export const careers: Career[] = [
     coreCourseIds: ["cs101", "cs201", "cs302", "cs301", "cs402"],
     preferredMajors: ["컴퓨터공학"],
     keywordAliases: ["backend", "server", "api", "cloud", "infra"],
+    recommendedCertifications: [
+      {
+        name: "SQLD",
+        reason: "데이터베이스 설계와 SQL 이해도를 증명해 백엔드 기본기를 보강하기 좋습니다.",
+        priority: "high",
+      },
+      {
+        name: "정보처리기사",
+        reason: "소프트웨어 전반 지식을 정리하면서 개발 직무 기본 체계를 점검하는 데 도움이 됩니다.",
+        priority: "medium",
+      },
+      {
+        name: "AWS Certified Cloud Practitioner",
+        reason: "클라우드 기반 서비스 구조와 운영 개념을 빠르게 정리할 수 있습니다.",
+        priority: "medium",
+      },
+    ],
   },
   {
     id: "pm",
@@ -258,6 +311,23 @@ export const careers: Career[] = [
     coreCourseIds: ["biz101", "biz301", "biz302", "cs401", "la101"],
     preferredMajors: ["경영학", "컴퓨터공학"],
     keywordAliases: ["product", "pm", "ux", "service", "strategy"],
+    recommendedCertifications: [
+      {
+        name: "SQLD",
+        reason: "지표 해석과 데이터 기반 의사결정 역량을 정리하는 데 유용합니다.",
+        priority: "high",
+      },
+      {
+        name: "ADsP",
+        reason: "데이터 분석 용어와 실무 해석 프레임을 익혀 제품 지표 커뮤니케이션에 도움이 됩니다.",
+        priority: "medium",
+      },
+      {
+        name: "AWS Certified Cloud Practitioner",
+        reason: "제품 요구사항을 기술 인프라 관점에서도 이해하는 데 도움이 됩니다.",
+        priority: "low",
+      },
+    ],
   },
   {
     id: "data-analyst",
@@ -268,6 +338,23 @@ export const careers: Career[] = [
     coreCourseIds: ["ie301", "ie302", "cs302", "ie401", "la102"],
     preferredMajors: ["컴퓨터공학", "경영학"],
     keywordAliases: ["data", "analytics", "ml", "statistics", "sql"],
+    recommendedCertifications: [
+      {
+        name: "SQLD",
+        reason: "데이터 추출과 질의 역량을 빠르게 검증하기 좋습니다.",
+        priority: "high",
+      },
+      {
+        name: "ADsP",
+        reason: "분석 기획과 통계 해석 기초를 정리하는 대표적인 입문 자격입니다.",
+        priority: "high",
+      },
+      {
+        name: "빅데이터분석기사",
+        reason: "데이터 처리와 분석 역량을 더 체계적으로 확장할 때 연결하기 좋습니다.",
+        priority: "medium",
+      },
+    ],
   },
   {
     id: "consultant",
@@ -279,6 +366,23 @@ export const careers: Career[] = [
     coreCourseIds: ["biz101", "biz301", "biz401", "cs401", "la101"],
     preferredMajors: ["경영학", "컴퓨터공학"],
     keywordAliases: ["consulting", "solution", "client", "strategy"],
+    recommendedCertifications: [
+      {
+        name: "SQLD",
+        reason: "데이터 근거를 바탕으로 문제를 진단하고 제안하는 역량을 보강할 수 있습니다.",
+        priority: "medium",
+      },
+      {
+        name: "정보처리기사",
+        reason: "IT 기반 솔루션을 설명할 때 필요한 기본 기술 이해도를 넓히는 데 도움이 됩니다.",
+        priority: "medium",
+      },
+      {
+        name: "AWS Certified Cloud Practitioner",
+        reason: "클라우드 전환이나 인프라 제안 맥락을 이해하는 데 실무적으로 유용합니다.",
+        priority: "low",
+      },
+    ],
   },
 ];
 

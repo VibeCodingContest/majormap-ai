@@ -8,6 +8,7 @@ import {
   demoProfiles,
   skillTagLabels,
 } from "@/lib/sample-data";
+import { validateTakenCourseGradePolicy } from "@/lib/grade-policy";
 import {
   CareerRecommendation,
   Course,
@@ -94,6 +95,10 @@ function CourseSelectionCard({
 }: CourseSelectionCardProps) {
   const checkboxId = `taken-course-${course.id}`;
   const gradeSelectId = `taken-course-grade-${course.id}`;
+  const isFpCourse = course.gradingType === "fp" || course.code.startsWith("LA");
+  const gradeOptions = isFpCourse
+    ? (["P", "F"] as const)
+    : GRADE_OPTIONS.filter((value) => value !== "P");
 
   return (
     <div
@@ -146,12 +151,15 @@ function CourseSelectionCard({
           className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
         >
           <option value="">성적 선택</option>
-          {GRADE_OPTIONS.map((value) => (
+          {gradeOptions.map((value) => (
             <option key={value} value={value}>
               {value}
             </option>
           ))}
         </select>
+        {checked && isFpCourse && (
+          <p className="mt-1 text-[11px] text-sky-700">P/F 과목</p>
+        )}
       </div>
     </div>
   );
@@ -169,6 +177,8 @@ const defaultProfile: StudentProfile = {
 const defaultPlanOptions: PlanOptions = {
   nextSemester: "1",
   targetCredits: 15,
+  firstSemesterTargetCredits: 15,
+  secondSemesterTargetCredits: 15,
   semesterCount: 1,
   includeLiberalArts: false,
 };
@@ -187,6 +197,9 @@ export function IntakeForm() {
   const [planResult, setPlanResult] = useState<PlanResult | null>(null);
   const [planLoading, setPlanLoading] = useState(false);
   const [planError, setPlanError] = useState<string | null>(null);
+  const [retakeSelectionMap, setRetakeSelectionMap] = useState<
+    Record<string, string[]>
+  >({});
 
   const visibleCourses = courses.filter(
     (c) =>
@@ -229,7 +242,26 @@ export function IntakeForm() {
     setSelectedCareer(null);
     setPlanResult(null);
     setPlanError(null);
+    setRetakeSelectionMap({});
     setPlanOptions(defaultPlanOptions);
+  }
+
+  function toggleRetakeCourseSelection(
+    careerId: string,
+    courseId: string,
+    checked: boolean
+  ) {
+    setRetakeSelectionMap((prev) => {
+      const current = prev[careerId] ?? [];
+      const next = checked
+        ? Array.from(new Set([...current, courseId]))
+        : current.filter((id) => id !== courseId);
+
+      return {
+        ...prev,
+        [careerId]: next,
+      };
+    });
   }
 
   function toggleCourse(id: string) {
@@ -268,6 +300,13 @@ export function IntakeForm() {
       takenCourses: [],
       takenCourseIds: [],
     }));
+    setResults([]);
+    setHasSubmitted(false);
+    setSelectedCareer(null);
+    setPlanResult(null);
+    setPlanError(null);
+    setRetakeSelectionMap({});
+    setPlanOptions(defaultPlanOptions);
     setError(null);
   }
 
@@ -282,6 +321,12 @@ export function IntakeForm() {
 
     if (payload.takenCourses.some((course) => !course.grade)) {
       setError("성적을 입력해주세요.");
+      return;
+    }
+
+    const gradePolicyError = validateTakenCourseGradePolicy(payload.takenCourses);
+    if (gradePolicyError) {
+      setError(gradePolicyError);
       return;
     }
 
@@ -307,6 +352,7 @@ export function IntakeForm() {
       setSelectedCareer(null);
       setPlanResult(null);
       setPlanError(null);
+      setRetakeSelectionMap({});
     } catch {
       setResults([]);
       setError("추천 요청 중 오류가 발생했습니다. 다시 시도해주세요.");
@@ -324,10 +370,21 @@ export function IntakeForm() {
     setPlanError(null);
 
     try {
+      const firstSemesterTargetCredits =
+        planOptions.firstSemesterTargetCredits ?? planOptions.targetCredits;
+      const secondSemesterTargetCredits =
+        planOptions.secondSemesterTargetCredits ?? firstSemesterTargetCredits;
+      const selectedRetakeCourseIds =
+        retakeSelectionMap[selectedCareer.careerId] ?? [];
       const payload = {
         ...buildCurrentProfile(),
         careerId: selectedCareer.careerId,
         ...planOptions,
+        targetCredits: firstSemesterTargetCredits,
+        firstSemesterTargetCredits,
+        secondSemesterTargetCredits,
+        includeRetakeCourses: selectedRetakeCourseIds.length > 0,
+        retakeCourseIds: selectedRetakeCourseIds,
       };
 
       const res = await fetch("/api/plan", {
@@ -558,6 +615,10 @@ export function IntakeForm() {
                   setPlanError(null);
                 }}
                 isPlanSelected={selectedCareer?.careerId === result.careerId}
+                selectedRetakeCourseIds={retakeSelectionMap[result.careerId] ?? []}
+                onRetakeCourseToggle={(courseId, checked) =>
+                  toggleRetakeCourseSelection(result.careerId, courseId, checked)
+                }
               >
                 {selectedCareer?.careerId === result.careerId && (
                   <div
