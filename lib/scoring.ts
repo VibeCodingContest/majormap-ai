@@ -1,4 +1,10 @@
-import { Career, Course, ScoreBreakdown, StudentProfile } from "./types";
+import {
+  Career,
+  Course,
+  GradeValue,
+  ScoreBreakdown,
+  StudentProfile,
+} from "./types";
 import { skillTagLabels } from "./sample-data";
 
 const REQUIRED_TAG_SCORE_MAX = 60;
@@ -7,6 +13,19 @@ const KEYWORD_BONUS_PER_MATCH = 4;
 const KEYWORD_BONUS_MAX = 8;
 const PRIMARY_MAJOR_BONUS = 4;
 const SECONDARY_MAJOR_BONUS = 2;
+const DEFAULT_GRADE_WEIGHT = 1;
+const GRADE_WEIGHTS: Record<GradeValue, number> = {
+  "A+": 1,
+  A0: 0.98,
+  "B+": 0.9,
+  B0: 0.84,
+  "C+": 0.62,
+  C0: 0.52,
+  "D+": 0.32,
+  D0: 0.2,
+  F: 0,
+  P: 0.72,
+};
 
 function normalizeKeyword(value: string) {
   return value.trim().toLowerCase();
@@ -16,28 +35,46 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
+function getCourseWeightMap(profile: StudentProfile) {
+  return new Map(
+    profile.takenCourses.map((course) => [
+      course.courseId,
+      course.grade ? GRADE_WEIGHTS[course.grade] : DEFAULT_GRADE_WEIGHT,
+    ])
+  );
+}
+
 export function calcScore(
   career: Career,
   takenCourses: Course[],
   profile: StudentProfile
 ): ScoreBreakdown {
-  const ownedTags = Array.from(
-    new Set(takenCourses.flatMap((course) => course.tags))
-  );
-  const matchedRequired = career.requiredTags.filter((t) =>
-    ownedTags.includes(t)
-  );
-  const matchedOptional = career.optionalTags.filter((t) =>
-    ownedTags.includes(t)
-  );
+  const courseWeightMap = getCourseWeightMap(profile);
+  const tagStrengthMap = new Map<string, number>();
+
+  for (const course of takenCourses) {
+    const courseWeight =
+      courseWeightMap.get(course.id) ?? DEFAULT_GRADE_WEIGHT;
+
+    for (const tag of course.tags) {
+      const currentWeight = tagStrengthMap.get(tag) ?? 0;
+      tagStrengthMap.set(tag, Math.max(currentWeight, courseWeight));
+    }
+  }
 
   const requiredCoverage =
     career.requiredTags.length > 0
-      ? matchedRequired.length / career.requiredTags.length
+      ? career.requiredTags.reduce(
+          (sum, tag) => sum + (tagStrengthMap.get(tag) ?? 0),
+          0
+        ) / career.requiredTags.length
       : 0;
   const optionalCoverage =
     career.optionalTags.length > 0
-      ? matchedOptional.length / career.optionalTags.length
+      ? career.optionalTags.reduce(
+          (sum, tag) => sum + (tagStrengthMap.get(tag) ?? 0),
+          0
+        ) / career.optionalTags.length
       : 0;
 
   const requiredTagScore = Math.round(requiredCoverage * REQUIRED_TAG_SCORE_MAX);
@@ -78,9 +115,29 @@ export function calcScore(
           career.requiredTags.includes(tag) || career.optionalTags.includes(tag)
       )
   ).length;
+  const weightedRelatedEvidence = takenCourses.reduce((sum, course) => {
+    const isRelated =
+      career.coreCourseIds.includes(course.id) ||
+      course.tags.some(
+        (tag) =>
+          career.requiredTags.includes(tag) || career.optionalTags.includes(tag)
+      );
+
+    if (!isRelated) {
+      return sum;
+    }
+
+    return sum + (courseWeightMap.get(course.id) ?? DEFAULT_GRADE_WEIGHT);
+  }, 0);
 
   const evidencePenalty =
-    relatedCourseCount <= 1 ? -18 : relatedCourseCount === 2 ? -10 : relatedCourseCount === 3 ? -4 : 0;
+    weightedRelatedEvidence <= 1
+      ? -18
+      : weightedRelatedEvidence <= 2
+      ? -10
+      : weightedRelatedEvidence <= 3
+      ? -4
+      : 0;
 
   const raw =
     requiredTagScore +

@@ -1,4 +1,4 @@
-import { Career, Course, DemoProfile } from "./types";
+import { Career, Course, DemoProfile, TakenCourseInput } from "./types";
 
 export const DATASET_NOTICE =
   "현재는 특정 실대학명이 아닌 데모용 샘플 커리큘럼 데이터셋 기준으로 동작합니다.";
@@ -282,6 +282,10 @@ export const careers: Career[] = [
   },
 ];
 
+function createTakenCourses(courseIds: string[]): TakenCourseInput[] {
+  return courseIds.map((courseId) => ({ courseId, grade: "A+" }));
+}
+
 export const demoProfiles: DemoProfile[] = [
   {
     label: "A — PM 지향 (2024 컴공+경영)",
@@ -290,6 +294,7 @@ export const demoProfiles: DemoProfile[] = [
       studentYearTrack: "2024",
       primaryMajor: "컴퓨터공학",
       secondaryMajor: "경영학",
+      takenCourses: createTakenCourses(["cs101", "biz101", "biz210", "biz301", "biz302"]),
       takenCourseIds: ["cs101", "biz101", "biz210", "biz301", "biz302"],
       interestKeywords: ["product", "strategy", "UX"],
     },
@@ -301,6 +306,7 @@ export const demoProfiles: DemoProfile[] = [
       studentYearTrack: "2023",
       primaryMajor: "컴퓨터공학",
       secondaryMajor: undefined,
+      takenCourses: createTakenCourses(["cs101", "cs201", "cs301", "cs302", "cs401"]),
       takenCourseIds: ["cs101", "cs201", "cs301", "cs302", "cs401"],
       interestKeywords: ["backend", "server", "API"],
     },
@@ -312,6 +318,7 @@ export const demoProfiles: DemoProfile[] = [
       studentYearTrack: "2024",
       primaryMajor: "컴퓨터공학",
       secondaryMajor: "경영학",
+      takenCourses: createTakenCourses(["cs101", "cs201", "ie301", "ie302", "ie401"]),
       takenCourseIds: ["cs101", "cs201", "ie301", "ie302", "ie401"],
       interestKeywords: ["analytics", "ML", "statistics"],
     },

@@ -43,7 +43,7 @@ function getTermSequence(
     ? [{ semester: "2", termLabel: "다음 2학기" }]
     : [
         { semester: "2", termLabel: "다음 2학기" },
-        { semester: "1", termLabel: "차다음 1학기" },
+        { semester: "1", termLabel: "그다음 1학기" },
       ];
 }
 
@@ -136,7 +136,7 @@ function buildDeferredReason(
     return "선택한 학기 수와 학점 한도 안에서 우선순위가 밀려 다음 학기로 이월했습니다.";
   }
 
-  return "개설 학기와 학점 한도를 고려할 때 이번 계획 범위를 넘어 deferred 처리했습니다.";
+  return "개설 학기와 학점 한도를 고려할 때 이번 계획 범위를 넘어 후순위로 보류했습니다.";
 }
 
 function buildCreditGapGuidance(

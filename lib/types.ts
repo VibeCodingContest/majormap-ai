@@ -23,10 +23,28 @@ export type Career = {
   keywordAliases?: string[];
 };
 
+export type GradeValue =
+  | "A+"
+  | "A0"
+  | "B+"
+  | "B0"
+  | "C+"
+  | "C0"
+  | "D+"
+  | "D0"
+  | "F"
+  | "P";
+
+export type TakenCourseInput = {
+  courseId: string;
+  grade?: GradeValue;
+};
+
 export type StudentProfile = {
   studentYearTrack: string;
   primaryMajor: string;
   secondaryMajor?: string;
+  takenCourses: TakenCourseInput[];
   takenCourseIds: string[];
   interestKeywords: string[];
 };
@@ -82,9 +100,21 @@ export type RecommendApiResponse =
       error: string;
     };
 
+export type TargetCredits =
+  | 12
+  | 13
+  | 14
+  | 15
+  | 16
+  | 17
+  | 18
+  | 19
+  | 20
+  | 21;
+
 export type PlanRequest = StudentProfile & {
   careerId: string;
-  targetCredits: 12 | 15 | 18;
+  targetCredits: TargetCredits;
   semesterCount: 1 | 2;
   includeLiberalArts: boolean;
   nextSemester: "1" | "2";

@@ -1,6 +1,19 @@
 'use client';
 
-import { PlanOptions } from "@/lib/types";
+import { PlanOptions, TargetCredits } from "@/lib/types";
+
+const TARGET_CREDIT_OPTIONS: TargetCredits[] = [
+  12,
+  13,
+  14,
+  15,
+  16,
+  17,
+  18,
+  19,
+  20,
+  21,
+];
 
 type Props = {
   careerName: string;
@@ -62,14 +75,16 @@ export function PlanSetupPanel({
             onChange={(e) =>
               onChange({
                 ...options,
-                targetCredits: Number(e.target.value) as 12 | 15 | 18,
+                targetCredits: Number(e.target.value) as TargetCredits,
               })
             }
             className="w-full rounded border border-gray-300 p-2 text-sm"
           >
-            <option value={12}>12학점</option>
-            <option value={15}>15학점</option>
-            <option value={18}>18학점</option>
+            {TARGET_CREDIT_OPTIONS.map((credit) => (
+              <option key={credit} value={credit}>
+                {credit}
+              </option>
+            ))}
           </select>
         </div>
 
