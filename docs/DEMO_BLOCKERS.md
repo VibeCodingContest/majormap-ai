@@ -1,77 +1,37 @@
 # DEMO BLOCKERS
 
-작성일: 2026-04-08  
-기준: `docs/DEMO_BLOCKERS.md`에 기록된 블로커 수정 완료 후 재검증
+기준: `majormap-ai` canonical repo의 현재 코드 상태
+
+---
 
 ## 현재 상태 요약
 
-| 항목 | 결과 |
+| 항목 | 상태 |
 |---|---|
 | `npm run lint` | 통과 |
 | `npm run build` | 통과 |
-| `npm run dev` | 기동 확인 완료 |
-| 데모 A | 프로덕트 매니저 1위 |
-| 데모 B | 백엔드 개발자 1위 |
-| 데모 C | 데이터 분석가 1위 |
-| `.gitignore` | 생성 완료 |
+| 추천 API | 존재 |
+| explain API | 존재 |
+| explain fallback | 존재 |
 
 ---
 
-## 1. 치명적
+## 현재 치명적 블로커
 
 없음.
 
-### 해결 완료 기록
-
-- `BLOCKER-1` 해결: 루트에 `package.json`, `tsconfig.json`, `next.config.ts`, `postcss.config.mjs`, `eslint.config.mjs`, `app/layout.tsx`, `app/globals.css` 추가
-- `BLOCKER-2` 해결: `lib/sample-data.ts`의 Demo C 관심 키워드를 `analytics`, `ML`, `statistics`로 조정해 데이터 분석가가 1위로 나오도록 수정
+현재 기준에서는 추천 흐름과 explain fallback이 제출용 데모를 막는 수준의 치명적 오류는 확인되지 않았다.
 
 ---
 
-## 2. 높음
+## 주의할 리스크
 
-없음.
-
-### 해결 완료 기록
-
-- `BLOCKER-3` 해결: `components/ResultCard.tsx`에서 `/api/explain` 응답의 `res.ok`를 확인하고, 실패 시 패널을 열지 않고 에러 메시지만 표시하도록 수정
-- `BLOCKER-4` 해결: `lib/llm.ts`에서 LLM 응답을 `isExplainResponse()`로 shape 검증 후, 스키마 불일치 시 fallback 설명으로 안전하게 전환
+- `OPENAI_API_KEY`가 없는 환경에서는 explain이 fallback 설명으로 동작한다.
+- live URL에서 실제 브라우저 기준 수동 점검은 제출 직전에 다시 필요하다.
+- 문서는 반드시 `majormap-ai` 기준으로만 업데이트해야 하며, `초기설계안`은 legacy 참고용이다.
 
 ---
 
-## 3. 중간
+## 결론
 
-없음.
-
-### 해결 완료 기록
-
-- `BLOCKER-5` 해결: `lib/llm.ts` 최상단에 `import "server-only";` 추가
-
----
-
-## 빠르게 고칠 수 있는 항목
-
-해결 완료:
-
-- `docs/TASKS.md` 완료 항목 `[x]` 반영
-- 루트 `.gitignore` 생성
-- `lib/recommendation.ts` 미사용 import 제거
-
-현재 남아 있는 항목은 데모 블로커가 아니라 운영상 주의사항이다.
-
-- 발표 환경에서 `3000` 포트가 이미 사용 중이면 Next.js가 `3001` 등 다른 포트로 자동 전환될 수 있음
-- `OPENAI_API_KEY`가 없어도 fallback은 동작하지만, 실 API 응답 품질은 발표 전에 한 번 더 수동 확인하는 것이 안전함
-
----
-
-## 최종 데모 가능 여부
-
-| 조건 | 상태 |
-|---|---|
-| Next.js 앱 실행 | 가능 |
-| 데모 A (PM 지향) | 정상 |
-| 데모 B (백엔드 지향) | 정상 |
-| 데모 C (데이터 지향) | 정상 |
-| AI 해설 패널 | 정상 |
-
-**결론**: 현재 기준으로 심사용 데모 가능 상태다.
+현재 canonical repo 기준으로는 제출 준비를 계속 진행할 수 있는 상태다. 남은 확인은 배포 환경과 제출물 정리다.

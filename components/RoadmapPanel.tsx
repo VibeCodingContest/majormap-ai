@@ -8,6 +8,9 @@ type Props = {
 };
 
 export function RoadmapPanel({ data, onClose }: Props) {
+  const evidence = Array.isArray(data.evidence) ? data.evidence : [];
+  const roadmap = Array.isArray(data.roadmap) ? data.roadmap : [];
+
   return (
     <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50 p-5 text-sm space-y-4">
       <div className="flex items-start justify-between gap-4">
@@ -15,8 +18,12 @@ export function RoadmapPanel({ data, onClose }: Props) {
           <p className="text-xs font-semibold uppercase tracking-wide text-blue-500 mb-1">
             AI 진로 해설
           </p>
-          <h3 className="text-base font-bold text-gray-900">{data.headline}</h3>
-          <p className="mt-1 text-gray-700">{data.fitSummary}</p>
+          <h3 className="text-base font-bold text-gray-900">
+            {data.headline || "AI 해설 결과"}
+          </h3>
+          <p className="mt-1 text-gray-700">
+            {data.fitSummary || "추천 결과를 바탕으로 설명을 생성했습니다."}
+          </p>
         </div>
         <button
           onClick={onClose}
@@ -26,11 +33,11 @@ export function RoadmapPanel({ data, onClose }: Props) {
         </button>
       </div>
 
-      {data.evidence.length > 0 && (
+      {evidence.length > 0 && (
         <div>
           <p className="mb-1 font-semibold text-gray-700">추천 근거</p>
           <ul className="space-y-1 list-disc list-inside text-gray-600">
-            {data.evidence.map((ev, i) => (
+            {evidence.map((ev, i) => (
               <li key={i}>{ev}</li>
             ))}
           </ul>
@@ -44,11 +51,11 @@ export function RoadmapPanel({ data, onClose }: Props) {
         </div>
       )}
 
-      {data.roadmap.length > 0 && (
+      {roadmap.length > 0 && (
         <div>
           <p className="mb-2 font-semibold text-gray-700">학습 로드맵</p>
           <div className="space-y-3">
-            {data.roadmap.map((phase) => (
+            {roadmap.map((phase) => (
               <div key={phase.phase} className="flex gap-3">
                 <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
                   {phase.phase}
