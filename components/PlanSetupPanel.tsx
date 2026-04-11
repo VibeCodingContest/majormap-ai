@@ -41,7 +41,7 @@ export function PlanSetupPanel({
   onSubmit,
 }: Props) {
   return (
-    <section className="rounded-xl border bg-white p-5 shadow-sm">
+    <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
       <div className="mb-4">
         <h3 className="text-lg font-bold text-gray-900">
           {careerName} 기준 학기 계획
@@ -50,7 +50,7 @@ export function PlanSetupPanel({
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">
+          <label className="mb-1 block min-h-[3.25rem] text-sm font-medium leading-snug text-gray-700">
             다음 학기
           </label>
           <select
@@ -61,7 +61,7 @@ export function PlanSetupPanel({
                 nextSemester: e.target.value === "2" ? "2" : "1",
               })
             }
-            className="w-full rounded border border-gray-300 p-2 text-sm"
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-gray-900"
           >
             <option value="1">1학기</option>
             <option value="2">2학기</option>
@@ -69,7 +69,7 @@ export function PlanSetupPanel({
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">
+          <label className="mb-1 block min-h-[3.25rem] text-sm font-medium leading-snug text-gray-700">
             다음 학기 목표 학점
           </label>
           <select
@@ -81,14 +81,14 @@ export function PlanSetupPanel({
                 firstSemesterTargetCredits: Number(e.target.value) as TargetCredits,
               })
             }
-            className="w-full rounded border border-gray-300 p-2 text-sm"
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-gray-900"
           >
             {renderTargetCreditOptions()}
           </select>
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">
+          <label className="mb-1 block min-h-[3.25rem] text-sm font-medium leading-snug text-gray-700">
             계획 학기 수
           </label>
           <select
@@ -99,7 +99,7 @@ export function PlanSetupPanel({
                 semesterCount: Number(e.target.value) as 1 | 2,
               })
             }
-            className="w-full rounded border border-gray-300 p-2 text-sm"
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-gray-900"
           >
             <option value={1}>1개 학기</option>
             <option value={2}>2개 학기</option>
@@ -108,7 +108,7 @@ export function PlanSetupPanel({
 
         {options.semesterCount === 2 && (
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
+            <label className="mb-1 block min-h-[3.25rem] text-sm font-medium leading-snug text-gray-700">
               그 다음 학기 목표 학점
             </label>
             <select
@@ -119,7 +119,7 @@ export function PlanSetupPanel({
                   secondSemesterTargetCredits: Number(e.target.value) as TargetCredits,
                 })
               }
-              className="w-full rounded border border-gray-300 p-2 text-sm"
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-gray-900"
             >
               {renderTargetCreditOptions()}
             </select>
@@ -128,7 +128,7 @@ export function PlanSetupPanel({
 
       </div>
 
-      <label className="mt-4 flex w-fit items-center gap-2 rounded border border-gray-200 px-3 py-2 text-sm text-gray-700">
+      <label className="mt-4 flex w-fit items-center gap-3 rounded-xl bg-slate-50 px-4 py-3 text-sm text-gray-700 ring-1 ring-slate-200">
         <input
           type="checkbox"
           checked={options.includeLiberalArts}
@@ -138,7 +138,7 @@ export function PlanSetupPanel({
               includeLiberalArts: e.target.checked,
             })
           }
-          className="h-4 w-4 accent-indigo-600"
+          className="h-4 w-4 rounded-md border border-slate-300 accent-indigo-600"
         />
         교양 과목 포함
       </label>
@@ -153,7 +153,7 @@ export function PlanSetupPanel({
         type="button"
         onClick={onSubmit}
         disabled={loading}
-        className="mt-5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 disabled:opacity-50 sm:mt-6"
+        className="mt-5 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 disabled:opacity-50 sm:mt-6"
       >
         {loading ? "계획 생성 중..." : "다음 학기 계획 생성"}
       </button>

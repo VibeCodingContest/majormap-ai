@@ -9,7 +9,7 @@ type Props = {
 
 export function SemesterPlanPanel({ result }: Props) {
   return (
-    <section className="space-y-4 rounded-xl border bg-white p-5 shadow-sm">
+    <section className="space-y-5 rounded-2xl bg-white p-5 shadow-sm">
       <div>
         <h3 className="text-lg font-bold text-gray-900">
           {result.selectedCareer.careerName} 기준 학기별 계획
@@ -39,7 +39,7 @@ export function SemesterPlanPanel({ result }: Props) {
       <div className="grid gap-4 lg:grid-cols-2">
         {result.semesters.map((semester) => (
           <div key={semester.termLabel} className="space-y-3">
-            <div className="rounded-xl border border-gray-200 bg-slate-50 p-4">
+            <div className="rounded-2xl bg-slate-50 p-4">
               <div className="mb-3 flex items-center justify-between gap-4">
                 <h4 className="text-base font-bold text-gray-900">
                   {semester.termLabel}
@@ -50,26 +50,26 @@ export function SemesterPlanPanel({ result }: Props) {
               </div>
 
               {semester.courses.length > 0 ? (
-                <div className="space-y-3">
+                <div className="overflow-hidden rounded-2xl bg-white divide-y divide-slate-100">
                   {semester.courses.map((course) => (
                     <div
                       key={course.courseId}
                       className={
                         course.isRetake
-                          ? "rounded-lg border-2 border-blue-500 bg-blue-50 p-3"
-                          : "rounded-lg border bg-white p-3"
+                          ? "border-l-4 border-blue-500 bg-blue-50/60 px-4 py-4"
+                          : "px-4 py-4"
                       }
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <p className="font-semibold text-gray-900">{course.name}</p>
-                            {course.isRetake && (
-                              <span className="rounded-full bg-blue-600 px-2 py-0.5 text-[11px] font-semibold text-white">
+                          <p className="font-semibold text-gray-900">{course.name}</p>
+                          {course.isRetake && (
+                            <div className="mt-2">
+                              <span className="inline-flex h-6 items-center rounded-full bg-blue-600 px-2.5 text-[11px] font-semibold text-white">
                                 재수강
                               </span>
-                            )}
-                          </div>
+                            </div>
+                          )}
                           <p className="mt-0.5 text-[11px] text-gray-400">
                             과목코드 {courseMap[course.courseId]?.code ?? course.courseId}
                           </p>
@@ -92,7 +92,7 @@ export function SemesterPlanPanel({ result }: Props) {
               )}
 
               {semester.creditGapGuidance && (
-                <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
+                <div className="mt-3 rounded-xl bg-blue-50 px-4 py-3">
                   <p className="text-sm font-semibold text-blue-900">
                     남은 학점 {semester.creditGapGuidance.remainingCredits}학점
                   </p>
@@ -125,7 +125,7 @@ export function SemesterPlanPanel({ result }: Props) {
             {result.deferredCourses.map((course) => (
               <div
                 key={course.courseId}
-                className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3"
+                className="rounded-xl bg-amber-50 px-4 py-3"
               >
                 <p className="text-sm font-medium text-gray-800">
                   {courseMap[course.courseId]?.name ?? course.courseId}
