@@ -65,6 +65,15 @@ export type CourseVisibilityContext = Pick<
   "studentYearTrack" | "primaryMajor" | "secondaryMajor"
 >;
 
+export type ConfidenceLevel = "low" | "medium" | "high";
+
+export type ScoreExplanation = {
+  fitLabel: string;
+  fitDescription: string;
+  confidenceLabel: string;
+  confidenceDescription: string;
+};
+
 export type ScoreBreakdown = {
   requiredCoverage: number;
   optionalCoverage: number;
@@ -73,6 +82,10 @@ export type ScoreBreakdown = {
   gradeAdjustment?: number;
   evidencePenaltyMultiplier: number;
   relatedCourseCount: number;
+  coreCourseCount: number;
+  gradedEvidenceCount: number;
+  relatedTagCoverage: number;
+  fitRawScore: number;
   total: number;
 };
 
@@ -85,18 +98,26 @@ export type CareerRecommendation = {
   careerId: string;
   careerName: string;
   score: number;
+  fitScore: number;
+  confidenceScore: number;
+  confidenceLevel: ConfidenceLevel;
   summary: string;
   reasonSummary: string;
+  fitSummary: string;
+  confidenceSummary: string;
+  scoreExplanation?: ScoreExplanation;
   scoreBreakdown: ScoreBreakdown;
   matchedTags: string[];
   missingTags: string[];
   strengthHighlights: string[];
   gapHighlights: string[];
+  confidenceHighlights: string[];
   reasons: string[];
   coreMissingCourseIds: string[];
   recommendedCourseIds: string[];
   evidenceCourseCount: number;
-  confidenceLevel?: "low" | "medium" | "high";
+  coreEvidenceCourseCount: number;
+  gradedEvidenceCourseCount: number;
   confidenceLabel: "낮음" | "보통" | "높음";
   confidenceReason: string;
   lowGradeWarnings: string[];

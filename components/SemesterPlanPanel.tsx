@@ -8,24 +8,12 @@ type Props = {
 };
 
 export function SemesterPlanPanel({ result }: Props) {
-  const retakeUnavailableNotes = Array.from(
-    new Set(
-      result.semesters.flatMap((semester) => semester.retakeUnavailableNotes ?? [])
-    )
-  );
-
   return (
     <section className="space-y-4 rounded-xl border bg-white p-5 shadow-sm">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-wide text-indigo-500">
-          2단계 수강 계획 결과
-        </p>
-        <h3 className="mt-1 text-lg font-bold text-gray-900">
+        <h3 className="text-lg font-bold text-gray-900">
           {result.selectedCareer.careerName} 기준 학기별 계획
         </h3>
-        <p className="mt-1 text-sm text-gray-500">
-          {result.selectedCareer.summary}
-        </p>
       </div>
 
       <div>
@@ -47,32 +35,6 @@ export function SemesterPlanPanel({ result }: Props) {
           )}
         </div>
       </div>
-
-      {result.retakeRecommendations.length > 0 && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
-          <p className="text-sm font-semibold text-amber-900">
-            재수강/보완 학습 우선
-          </p>
-          <ul className="mt-2 space-y-1">
-            {result.retakeRecommendations.map((note) => (
-              <li key={note} className="text-xs text-amber-800">
-                {note}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {retakeUnavailableNotes.length > 0 && (
-        <aside className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-xs leading-5 text-gray-500">
-          <p className="font-semibold text-gray-400">재수강 미반영 안내</p>
-          <ul className="mt-1 space-y-1">
-            {retakeUnavailableNotes.map((note) => (
-              <li key={note}>{note}</li>
-            ))}
-          </ul>
-        </aside>
-      )}
 
       <div className="grid gap-4 lg:grid-cols-2">
         {result.semesters.map((semester) => (
@@ -168,7 +130,7 @@ export function SemesterPlanPanel({ result }: Props) {
                 <p className="text-sm font-medium text-gray-800">
                   {courseMap[course.courseId]?.name ?? course.courseId}
                 </p>
-                <p className="mt-1 text-xs text-gray-600">{course.reason}</p>
+                <p className="mt-1 text-xs break-keep text-gray-600">{course.reason}</p>
               </div>
             ))}
           </div>

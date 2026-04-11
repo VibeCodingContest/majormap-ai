@@ -36,6 +36,7 @@ function buildFallback(
   const missingNames = rec.missingTags
     .map((t) => skillTagLabels[t] ?? t)
     .join(", ");
+  const confidenceSupport = rec.confidenceHighlights.join(", ");
 
   const roadmap: RoadmapPhase[] = [
     {
@@ -50,6 +51,8 @@ function buildFallback(
       description:
         missingNames
           ? `${missingNames} 관련 과목을 수강해 핵심 역량을 채우세요.`
+          : confidenceSupport
+          ? `${confidenceSupport}를 통해 추천 근거를 더 보강하세요.`
           : "심화 과목을 통해 전문성을 높이세요.",
       courseIds: rec.recommendedCourseIds.slice(1, 2),
     },
@@ -62,15 +65,17 @@ function buildFallback(
   ];
 
   return {
-    headline: `${rec.careerName} 적합도 ${rec.score}점`,
-    fitSummary: rec.summary,
-    evidence: [...rec.reasons, ...rec.recommendationNotes].slice(0, 4),
+    headline: `${rec.careerName} 탐색 적합도 ${rec.fitScore}점`,
+    fitSummary: `${rec.fitSummary} ${rec.confidenceSummary}`,
+    evidence: [rec.reasonSummary, ...rec.reasons, ...rec.recommendationNotes].slice(0, 4),
     caution:
       rec.lowGradeWarnings.length > 0
         ? rec.lowGradeWarnings[0]
         : rec.missingTags.length > 0
-        ? `${missingNames} 역량을 보완하면 취업 경쟁력이 크게 향상됩니다.`
-        : "현재 역량으로 충분히 진입 가능한 진로입니다.",
+        ? `${missingNames} 역량을 보완하면 탐색 적합도를 더 높일 수 있습니다.`
+        : rec.confidenceLevel === "low"
+        ? rec.confidenceSummary
+        : "현재 점수 기준으로는 방향성과 추천 근거가 함께 확인됩니다.",
     roadmap,
   };
 }
@@ -93,18 +98,25 @@ function buildPrompt(rec: CareerRecommendation, profile: StudentProfile): string
 - 수강 과목: ${takenCourseNames || "없음"}
 - 관심 키워드: ${profile.interestKeywords.join(", ") || "없음"}
 
-추천 진로: ${rec.careerName} (적합도 ${rec.score}점)
+추천 진로: ${rec.careerName} (탐색 적합도 ${rec.fitScore}점, 추천 확신도 ${rec.confidenceScore}점, 확신도 ${rec.confidenceLabel})
+방향 설명: ${rec.fitSummary}
+근거 설명: ${rec.confidenceSummary}
 보유 역량: ${rec.matchedTags.map((t) => skillTagLabels[t] ?? t).join(", ") || "없음"}
 부족 역량: ${rec.missingTags.map((t) => skillTagLabels[t] ?? t).join(", ") || "없음"}
+추천 근거 보강 포인트: ${rec.confidenceHighlights.join(", ") || "없음"}
 보완 추천 과목: ${recommendedNames || "없음"}
 저성적 경고: ${rec.lowGradeWarnings.join(" | ") || "없음"}
 재수강 권장: ${rec.retakeRecommendations.join(" | ") || "없음"}
 추천 자격증: ${rec.recommendedCertifications.map((item) => item.name).join(", ") || "없음"}
 
 아래 JSON 형식으로만 응답해주세요. 다른 텍스트는 포함하지 마세요:
+중요:
+- "방향성"과 "근거 충분도"를 섞지 마세요.
+- 부족 역량이 없으면 근거 부족을 역량 부족처럼 쓰지 마세요.
+- 필수 역량이 충족된 경우 "핵심 역량 공백" 같은 표현을 쓰지 마세요.
 {
   "headline": "한 줄 요약 (최대 30자)",
-  "fitSummary": "이 진로와 학생의 적합성 설명 (2~3문장)",
+  "fitSummary": "방향성과 근거를 구분한 해설 (2~3문장)",
   "evidence": ["근거1", "근거2", "근거3"],
   "caution": "보완 포인트 한 문장",
   "roadmap": [

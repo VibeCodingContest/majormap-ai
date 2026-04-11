@@ -140,7 +140,10 @@ function buildDeferredReason(
   );
 
   if (unmetPrerequisites.length > 0) {
-    return `선수과목(${unmetPrerequisites.join(", ")})을 먼저 이수해야 합니다.`;
+    const prereqLabels = unmetPrerequisites.map(
+      (id) => courseMap[id]?.name ?? id
+    );
+    return `${course.name}은(는) ${prereqLabels.join(", ")}을(를) 먼저 이수한 뒤 수강할 수 있습니다.`;
   }
 
   if (semesterCount === 1) {

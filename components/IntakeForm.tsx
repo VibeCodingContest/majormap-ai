@@ -2,8 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  COURSE_CODE_NOTE,
-  DATASET_NOTICE,
   demoProfiles,
   skillTagLabels,
 } from "@/lib/sample-data";
@@ -221,6 +219,7 @@ export function IntakeForm() {
   >({});
   const recommendAbortControllerRef = useRef<AbortController | null>(null);
   const planAbortControllerRef = useRef<AbortController | null>(null);
+  const resultsRef = useRef<HTMLElement>(null);
 
   const visibleCourses = useMemo(
     () => getVisibleCoursesForProfile(profile),
@@ -389,6 +388,9 @@ export function IntakeForm() {
       setResults(data.results);
       setHasSubmitted(true);
       setSelectedCareer(null);
+      setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 120);
       setPlanResult(null);
       setPlanError(null);
       setRetakeSelectionMap({});
@@ -511,15 +513,6 @@ export function IntakeForm() {
 
   return (
     <div className="mt-6 space-y-8">
-      <section className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-        <p className="font-semibold">지원 데이터셋 안내</p>
-        <p className="mt-1">{DATASET_NOTICE}</p>
-        <p className="mt-1">
-          현재 지원 범위는 컴퓨터공학·경영학, 2023·2024 학번 트랙, 진로 4개입니다.
-        </p>
-        <p className="mt-1 text-amber-800">{COURSE_CODE_NOTE}</p>
-      </section>
-
       {/* 데모 프로필 빠른 선택 */}
       <section>
         <p className="mb-2 text-sm font-semibold text-gray-500 uppercase tracking-wide">
@@ -544,11 +537,6 @@ export function IntakeForm() {
             초기화
           </button>
         </div>
-        {demoProfiles.map((dp, idx) => (
-          <p key={idx} className="mt-1 text-xs text-gray-400">
-            {dp.label.split("—")[0].trim()}: {dp.description}
-          </p>
-        ))}
       </section>
 
       {/* 입력 폼 */}
@@ -672,53 +660,66 @@ export function IntakeForm() {
 
       {/* 결과 */}
       {results.length > 0 && (
-        <section>
-          <h2 className="mb-4 text-lg font-bold">추천 진로 TOP {results.length}</h2>
+        <section ref={resultsRef} className="scroll-mt-6">
+          <div className="mb-6 border-t-2 border-indigo-100 pt-6">
+            <h2 className="text-xl font-bold text-gray-900">
+              추천 진로 TOP {results.length}
+            </h2>
+          </div>
           <div className="space-y-4">
-            {results.map((result) => (
-              <ResultCard
-                key={result.careerId}
-                result={result}
-                profile={buildCurrentProfile()}
-                onPlanSelect={(nextCareer) => {
-                  if (selectedCareer?.careerId === nextCareer.careerId) {
-                    setSelectedCareer(null);
+            {results.map((result) => {
+              const isThisSelected = selectedCareer?.careerId === result.careerId;
+              // 계획 모드에서 비선택 카드는 숨긴다
+              if (selectedCareer && !isThisSelected) {
+                return null;
+              }
+
+              return (
+                <ResultCard
+                  key={result.careerId}
+                  result={result}
+                  profile={buildCurrentProfile()}
+                  onPlanSelect={(nextCareer) => {
+                    if (selectedCareer?.careerId === nextCareer.careerId) {
+                      setSelectedCareer(null);
+                      setPlanResult(null);
+                      setPlanError(null);
+                      return;
+                    }
+
+                    setSelectedCareer(nextCareer);
                     setPlanResult(null);
                     setPlanError(null);
-                    return;
+                  }}
+                  isPlanSelected={isThisSelected}
+                  collapsed={isThisSelected}
+                  selectedRetakeCourseIds={retakeSelectionMap[result.careerId] ?? []}
+                  onRetakeCourseToggle={(courseId, checked) =>
+                    toggleRetakeCourseSelection(result.careerId, courseId, checked)
                   }
-
-                  setSelectedCareer(nextCareer);
-                  setPlanResult(null);
-                  setPlanError(null);
-                }}
-                isPlanSelected={selectedCareer?.careerId === result.careerId}
-                selectedRetakeCourseIds={retakeSelectionMap[result.careerId] ?? []}
-                onRetakeCourseToggle={(courseId, checked) =>
-                  toggleRetakeCourseSelection(result.careerId, courseId, checked)
-                }
-              >
-                {selectedCareer?.careerId === result.careerId && (
-                  <div
-                    id={`plan-inline-${result.careerId}`}
-                    tabIndex={-1}
-                    className="mt-4 space-y-4 border-t pt-4 outline-none"
-                  >
-                    <PlanSetupPanel
-                      careerName={selectedCareer.careerName}
-                      options={planOptions}
-                      loading={planLoading}
-                      error={planError}
-                      onChange={setPlanOptions}
-                      onSubmit={handlePlanSubmit}
-                    />
-                    {planResult?.selectedCareer.careerId === result.careerId && (
-                      <SemesterPlanPanel result={planResult} />
-                    )}
-                  </div>
-                )}
-              </ResultCard>
-            ))}
+                >
+                  {isThisSelected && (
+                    <div
+                      id={`plan-inline-${result.careerId}`}
+                      tabIndex={-1}
+                      className="mt-4 space-y-4 border-t pt-4 outline-none"
+                    >
+                      <PlanSetupPanel
+                        careerName={selectedCareer.careerName}
+                        options={planOptions}
+                        loading={planLoading}
+                        error={planError}
+                        onChange={setPlanOptions}
+                        onSubmit={handlePlanSubmit}
+                      />
+                      {planResult?.selectedCareer.careerId === result.careerId && (
+                        <SemesterPlanPanel result={planResult} />
+                      )}
+                    </div>
+                  )}
+                </ResultCard>
+              );
+            })}
           </div>
         </section>
       )}

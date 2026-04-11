@@ -1,4 +1,12 @@
-import { Career, Course, GradeValue, ScoreBreakdown, ScoreAdjustment, StudentProfile } from "./types";
+import {
+  Career,
+  ConfidenceLevel,
+  Course,
+  GradeValue,
+  ScoreBreakdown,
+  ScoreAdjustment,
+  StudentProfile,
+} from "./types";
 import { skillTagLabels } from "./sample-data";
 
 const REQUIRED_TAG_SCORE_MAX = 60;
@@ -35,6 +43,11 @@ const GRADE_RANKS: Record<Exclude<GradeValue, "P">, number> = {
   "A+": 8,
 };
 
+type ConfidenceBand = {
+  min: number;
+  max: number;
+};
+
 function normalizeKeyword(value: string) {
   return value.trim().toLowerCase();
 }
@@ -46,6 +59,10 @@ function clamp(value: number, min: number, max: number) {
 function roundTo(value: number, digits: number) {
   const factor = 10 ** digits;
   return Math.round(value * factor) / factor;
+}
+
+function hasRecordedGrade(grade?: GradeValue) {
+  return typeof grade === "string";
 }
 
 export function gradeToRank(grade?: GradeValue): number | null {
@@ -101,6 +118,14 @@ function isCareerRelatedCourse(course: Course, career: Career) {
   );
 }
 
+function getRelatedEvidenceCourses(career: Career, takenCourses: Course[]) {
+  return takenCourses.filter((course) => isCareerRelatedCourse(course, career));
+}
+
+function getCareerTagUniverse(career: Career) {
+  return Array.from(new Set([...career.requiredTags, ...career.optionalTags]));
+}
+
 export function calculateCoverageScore(
   tags: string[],
   tagStrengthMap: Map<string, number>,
@@ -119,29 +144,32 @@ export function calculateCoverageScore(
 }
 
 export function calculateEvidencePenaltyMultiplier(relatedCourseCount: number) {
-  // 관련 과목 수가 적을수록 최종 점수를 보수적으로 축소한다.
-  if (relatedCourseCount <= 1) {
-    return 0.45;
+  // 적합도는 유지하되, 관련 과목 수가 적으면 약하게만 보수 조정한다.
+  if (relatedCourseCount <= 0) {
+    return 0.78;
+  }
+  if (relatedCourseCount === 1) {
+    return 0.84;
   }
   if (relatedCourseCount === 2) {
-    return 0.6;
+    return 0.9;
   }
   if (relatedCourseCount === 3) {
-    return 0.72;
+    return 0.95;
   }
   if (relatedCourseCount === 4) {
-    return 0.82;
+    return 0.98;
   }
   return 1;
 }
 
 export function deriveConfidenceLevel(
-  relatedCourseCount: number
-): "low" | "medium" | "high" {
-  if (relatedCourseCount <= 2) {
+  confidenceScore: number
+): ConfidenceLevel {
+  if (confidenceScore < 45) {
     return "low";
   }
-  if (relatedCourseCount <= 4) {
+  if (confidenceScore < 70) {
     return "medium";
   }
   return "high";
@@ -151,6 +179,71 @@ function getTakenCourseGradeMap(profile: StudentProfile) {
   return new Map(
     profile.takenCourses.map((course) => [course.courseId, course.grade])
   );
+}
+
+function getConfidenceBand(relatedCourseCount: number): ConfidenceBand {
+  if (relatedCourseCount <= 0) {
+    return { min: 20, max: 28 };
+  }
+
+  if (relatedCourseCount === 1) {
+    return { min: 26, max: 35 };
+  }
+
+  if (relatedCourseCount === 2) {
+    return { min: 35, max: 45 };
+  }
+
+  if (relatedCourseCount === 3) {
+    return { min: 45, max: 56 };
+  }
+
+  if (relatedCourseCount === 4) {
+    return { min: 52, max: 65 };
+  }
+
+  return { min: 65, max: 85 };
+}
+
+function getProfileCompleteness(profile: StudentProfile) {
+  const signals = [
+    Boolean(profile.studentYearTrack?.trim()),
+    Boolean(profile.primaryMajor?.trim()),
+    profile.takenCourses.some((course) => hasRecordedGrade(course.grade)),
+  ];
+
+  return signals.filter(Boolean).length / signals.length;
+}
+
+function buildConfidenceHighlights(input: {
+  relatedCourseCount: number;
+  coreCourseCount: number;
+  gradedEvidenceCount: number;
+  relatedTagCoverage: number;
+}) {
+  const highlights: string[] = [];
+
+  if (input.relatedCourseCount < 3) {
+    highlights.push("관련 과목 이수 확대");
+  }
+
+  if (input.coreCourseCount === 0) {
+    highlights.push("핵심 과목 이수 확보");
+  } else if (input.coreCourseCount < 2) {
+    highlights.push("핵심 과목 경험 보강");
+  }
+
+  if (input.gradedEvidenceCount === 0) {
+    highlights.push("성적 정보 입력");
+  } else if (input.gradedEvidenceCount < input.relatedCourseCount) {
+    highlights.push("관련 과목 성적 정보 보강");
+  }
+
+  if (input.relatedTagCoverage < 0.6) {
+    highlights.push("관련 태그 다양성 확대");
+  }
+
+  return Array.from(new Set(highlights)).slice(0, 3);
 }
 
 function getPenaltyDelta(course: Course, grade: GradeValue) {
@@ -274,6 +367,84 @@ export function analyzeCareerGradeSignals(
   };
 }
 
+export function calcConfidenceScore(
+  career: Career,
+  takenCourses: Course[],
+  profile: StudentProfile
+) {
+  const relatedEvidenceCourses = getRelatedEvidenceCourses(career, takenCourses);
+  const relatedCourseCount = relatedEvidenceCourses.length;
+  const takenCourseGradeMap = getTakenCourseGradeMap(profile);
+  const coreCourseCount = relatedEvidenceCourses.filter((course) =>
+    career.coreCourseIds.includes(course.id)
+  ).length;
+  const gradedEvidenceCount = relatedEvidenceCourses.filter((course) =>
+    hasRecordedGrade(takenCourseGradeMap.get(course.id))
+  ).length;
+  const relatedTagUniverse = getCareerTagUniverse(career);
+  const matchedRelatedTagCount = Array.from(
+    new Set(
+      relatedEvidenceCourses.flatMap((course) =>
+        course.tags.filter((tag) => relatedTagUniverse.includes(tag))
+      )
+    )
+  ).length;
+  const relatedTagCoverage =
+    relatedTagUniverse.length > 0
+      ? matchedRelatedTagCount / relatedTagUniverse.length
+      : 0;
+  const profileCompleteness = getProfileCompleteness(profile);
+  const evidenceRichness =
+    Math.min(coreCourseCount / 3, 1) * 0.35 +
+    (relatedCourseCount > 0 ? gradedEvidenceCount / relatedCourseCount : 0) * 0.3 +
+    relatedTagCoverage * 0.2 +
+    profileCompleteness * 0.15;
+
+  const band = getConfidenceBand(relatedCourseCount);
+  let max = band.max;
+
+  if (gradedEvidenceCount === 0) {
+    max -= 10;
+  } else if (gradedEvidenceCount < Math.min(relatedCourseCount, 2)) {
+    max -= 4;
+  }
+
+  if (coreCourseCount === 0) {
+    max -= 8;
+  } else if (coreCourseCount === 1) {
+    max -= 3;
+  }
+
+  if (!profile.studentYearTrack?.trim() || !profile.primaryMajor?.trim()) {
+    max -= 6;
+  }
+
+  max = Math.max(band.min, max);
+
+  const score = clamp(
+    Math.round(band.min + evidenceRichness * (max - band.min)),
+    0,
+    100
+  );
+  const level = deriveConfidenceLevel(score);
+
+  return {
+    score,
+    level,
+    relatedCourseCount,
+    coreCourseCount,
+    gradedEvidenceCount,
+    relatedTagCoverage: roundTo(relatedTagCoverage, 2),
+    evidenceRichness: roundTo(evidenceRichness, 2),
+    confidenceHighlights: buildConfidenceHighlights({
+      relatedCourseCount,
+      coreCourseCount,
+      gradedEvidenceCount,
+      relatedTagCoverage,
+    }),
+  };
+}
+
 export function calcScore(
   career: Career,
   takenCourses: Course[],
@@ -282,6 +453,7 @@ export function calcScore(
 ): ScoreBreakdown {
   // TODO: 향후 course-level penalty를 넘어서 전체 grade distribution도 함께 반영 가능
   const courseWeightMap = getCourseWeightMap(profile);
+  const takenCourseGradeMap = getTakenCourseGradeMap(profile);
   const tagStrengthMap = new Map<string, number>();
 
   for (const course of takenCourses) {
@@ -336,9 +508,26 @@ export function calcScore(
       : 0;
   const majorFitBonus = primaryMajorBonus + secondaryMajorBonus;
 
-  const relatedCourseCount = takenCourses.filter((course) =>
-    isCareerRelatedCourse(course, career)
+  const relatedEvidenceCourses = getRelatedEvidenceCourses(career, takenCourses);
+  const relatedCourseCount = relatedEvidenceCourses.length;
+  const coreCourseCount = relatedEvidenceCourses.filter((course) =>
+    career.coreCourseIds.includes(course.id)
   ).length;
+  const gradedEvidenceCount = relatedEvidenceCourses.filter((course) =>
+    hasRecordedGrade(takenCourseGradeMap.get(course.id))
+  ).length;
+  const relatedTagUniverse = getCareerTagUniverse(career);
+  const matchedRelatedTagCount = Array.from(
+    new Set(
+      relatedEvidenceCourses.flatMap((course) =>
+        course.tags.filter((tag) => relatedTagUniverse.includes(tag))
+      )
+    )
+  ).length;
+  const relatedTagCoverage =
+    relatedTagUniverse.length > 0
+      ? matchedRelatedTagCount / relatedTagUniverse.length
+      : 0;
   const evidencePenaltyMultiplier =
     calculateEvidencePenaltyMultiplier(relatedCourseCount);
 
@@ -347,10 +536,10 @@ export function calcScore(
     GRADE_ADJUSTMENT_MIN,
     GRADE_ADJUSTMENT_MAX
   );
-  const preEvidenceRaw =
+  const fitRawScore =
     requiredScore + optionalScore + keywordBonus + majorFitBonus + gradeAdjustment;
   const total = clamp(
-    Math.round(preEvidenceRaw * evidencePenaltyMultiplier),
+    Math.round(fitRawScore * evidencePenaltyMultiplier),
     0,
     100
   );
@@ -363,6 +552,10 @@ export function calcScore(
     gradeAdjustment: roundTo(gradeAdjustment, 1),
     evidencePenaltyMultiplier,
     relatedCourseCount,
+    coreCourseCount,
+    gradedEvidenceCount,
+    relatedTagCoverage: roundTo(relatedTagCoverage, 2),
+    fitRawScore: roundTo(fitRawScore, 1),
     total,
   };
 }
@@ -399,14 +592,14 @@ export function buildReasons(
   }
 
   if (missingTags.length === 0) {
-    reasons.push("필수 역량을 모두 충족하고 있어 즉시 진입이 가능한 상태입니다.");
+    reasons.push("필수 역량 태그 기준으로는 공백이 없어 방향성이 유지됩니다.");
   } else {
     const missingNames = missingTags
       .slice(0, 2)
       .map((t) => skillTagLabels[t] ?? t)
       .join(", ");
     reasons.push(
-      `${missingNames} 역량을 보완하면 경쟁력이 크게 높아집니다.`
+      `${missingNames} 역량을 보완하면 적합도를 더 높일 수 있습니다.`
     );
   }
 

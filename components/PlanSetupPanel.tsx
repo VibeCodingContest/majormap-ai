@@ -43,15 +43,9 @@ export function PlanSetupPanel({
   return (
     <section className="rounded-xl border bg-white p-5 shadow-sm">
       <div className="mb-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-indigo-500">
-          2단계 계획 옵션
-        </p>
-        <h3 className="mt-1 text-lg font-bold text-gray-900">
-          {careerName} 기준 다음 학기 계획
+        <h3 className="text-lg font-bold text-gray-900">
+          {careerName} 기준 학기 계획
         </h3>
-        <p className="mt-1 text-sm text-gray-500">
-          진로 추천 결과를 유지한 채 다음 1~2개 학기 수강 계획만 추가로 계산합니다.
-        </p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

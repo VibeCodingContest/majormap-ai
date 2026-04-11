@@ -40,3 +40,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local run logs & review outputs
+.cloudflared-3000*.log
+.start-3000*.log
+review-artifacts/
