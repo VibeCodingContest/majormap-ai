@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8fafc;
-  --foreground: #111827;
+  --background: #f6f8fb;
+  --foreground: #0f172a;
   --font-sans: "Segoe UI", Arial, Helvetica, sans-serif;
   --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 }
@@ -19,7 +19,10 @@ html {
 }
 
 body {
-  background: var(--background);
+  background:
+    radial-gradient(circle at top left, rgba(219, 234, 254, 0.9), transparent 32%),
+    radial-gradient(circle at top right, rgba(224, 231, 255, 0.75), transparent 28%),
+    var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
 }

@@ -9,15 +9,16 @@ type Props = {
 
 export function SemesterPlanPanel({ result }: Props) {
   return (
-    <section className="space-y-5 rounded-2xl bg-white p-5 shadow-sm">
+    <section className="space-y-6 rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.35)] sm:p-6">
       <div>
-        <h3 className="text-lg font-bold text-gray-900">
+        <p className="text-sm font-semibold tracking-wide text-slate-400">Semester Plan</p>
+        <h3 className="mt-1 text-xl font-black tracking-tight text-slate-950">
           {result.selectedCareer.careerName} 기준 학기별 계획
         </h3>
       </div>
 
       <div>
-        <p className="mb-2 text-sm font-semibold text-gray-700">
+        <p className="mb-3 text-sm font-semibold text-slate-700">
           아직 이수하지 않은 핵심 과목
         </p>
         <div className="flex flex-wrap gap-2">
@@ -25,13 +26,13 @@ export function SemesterPlanPanel({ result }: Props) {
             result.coreMissingCourseIds.map((courseId) => (
               <span
                 key={courseId}
-                className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700"
+                className="inline-flex min-h-9 items-center rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700"
               >
                 {courseMap[courseId]?.name ?? courseId}
               </span>
             ))
           ) : (
-            <span className="text-sm text-green-600">핵심 과목을 모두 이수했습니다.</span>
+            <span className="text-sm font-medium text-emerald-600">핵심 과목을 모두 이수했습니다.</span>
           )}
         </div>
       </div>
@@ -39,30 +40,30 @@ export function SemesterPlanPanel({ result }: Props) {
       <div className="grid gap-4 lg:grid-cols-2">
         {result.semesters.map((semester) => (
           <div key={semester.termLabel} className="space-y-3">
-            <div className="rounded-2xl bg-slate-50 p-4">
+            <div className="rounded-[24px] bg-slate-50 p-4">
               <div className="mb-3 flex items-center justify-between gap-4">
-                <h4 className="text-base font-bold text-gray-900">
+                <h4 className="text-lg font-black tracking-tight text-slate-950">
                   {semester.termLabel}
                 </h4>
-                <span className="text-sm font-semibold text-gray-500">
+                <span className="text-sm font-semibold text-slate-500">
                   {semester.totalCredits}/{semester.targetCredits}학점
                 </span>
               </div>
 
               {semester.courses.length > 0 ? (
-                <div className="overflow-hidden rounded-2xl bg-white divide-y divide-slate-100">
+                <div className="overflow-hidden rounded-[22px] bg-white ring-1 ring-slate-100">
                   {semester.courses.map((course) => (
                     <div
                       key={course.courseId}
                       className={
                         course.isRetake
-                          ? "border-l-4 border-blue-500 bg-blue-50/60 px-4 py-4"
-                          : "px-4 py-4"
+                          ? "border-b border-slate-100 border-l-4 border-blue-500 bg-blue-50/50 px-4 py-4 last:border-b-0"
+                          : "border-b border-slate-100 px-4 py-4 last:border-b-0"
                       }
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <p className="font-semibold text-gray-900">{course.name}</p>
+                          <p className="text-lg font-bold text-slate-900">{course.name}</p>
                           {course.isRetake && (
                             <div className="mt-2">
                               <span className="inline-flex h-6 items-center rounded-full bg-blue-600 px-2.5 text-[11px] font-semibold text-white">
@@ -70,33 +71,33 @@ export function SemesterPlanPanel({ result }: Props) {
                               </span>
                             </div>
                           )}
-                          <p className="mt-0.5 text-[11px] text-gray-400">
+                          <p className="mt-1 text-[11px] uppercase tracking-wide text-slate-400">
                             과목코드 {courseMap[course.courseId]?.code ?? course.courseId}
                           </p>
-                          <p className="mt-1 text-xs text-gray-500">
+                          <p className="mt-2 text-sm leading-6 text-slate-600">
                             {course.reason}
                           </p>
                         </div>
-                        <span className="shrink-0 text-xs font-semibold text-gray-500">
+                        <span className="shrink-0 text-sm font-semibold text-slate-500">
                           {course.credits}학점
                         </span>
                       </div>
-                      <p className="mt-2 text-xs text-gray-600">{course.whyNow}</p>
+                      <p className="mt-3 text-sm leading-6 text-slate-700">{course.whyNow}</p>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-gray-500">
+                <p className="rounded-[22px] bg-white px-4 py-5 text-sm leading-6 text-slate-500 ring-1 ring-slate-100">
                   현재 조건에서 이 학기에 바로 배치할 수 있는 과목이 없습니다.
                 </p>
               )}
 
               {semester.creditGapGuidance && (
-                <div className="mt-3 rounded-xl bg-blue-50 px-4 py-3">
+                <div className="mt-3 rounded-[22px] border border-blue-100 bg-blue-50 px-4 py-4">
                   <p className="text-sm font-semibold text-blue-900">
                     남은 학점 {semester.creditGapGuidance.remainingCredits}학점
                   </p>
-                  <p className="mt-1 text-xs text-blue-800">
+                  <p className="mt-2 text-sm leading-6 text-blue-800">
                     {semester.creditGapGuidance.message}
                   </p>
                   {semester.creditGapGuidance.suggestedCourseIds.length > 0 && (
@@ -104,7 +105,7 @@ export function SemesterPlanPanel({ result }: Props) {
                       {semester.creditGapGuidance.suggestedCourseIds.map((courseId) => (
                         <span
                           key={courseId}
-                          className="rounded-full bg-white px-3 py-1 text-xs font-medium text-blue-700"
+                          className="inline-flex min-h-9 items-center rounded-full bg-white px-3 py-1 text-xs font-semibold text-blue-700"
                         >
                           {courseMap[courseId]?.name ?? courseId}
                         </span>
@@ -120,17 +121,17 @@ export function SemesterPlanPanel({ result }: Props) {
 
       {result.deferredCourses.length > 0 && (
         <div>
-          <p className="mb-2 text-sm font-semibold text-gray-700">이월된 과목</p>
+          <p className="mb-3 text-sm font-semibold text-slate-700">이월된 과목</p>
           <div className="space-y-2">
             {result.deferredCourses.map((course) => (
               <div
                 key={course.courseId}
-                className="rounded-xl bg-amber-50 px-4 py-3"
+                className="rounded-[22px] border border-amber-100 bg-amber-50 px-4 py-4"
               >
-                <p className="text-sm font-medium text-gray-800">
+                <p className="text-sm font-semibold text-slate-800">
                   {courseMap[course.courseId]?.name ?? course.courseId}
                 </p>
-                <p className="mt-1 text-xs break-keep text-gray-600">{course.reason}</p>
+                <p className="mt-2 text-sm break-keep leading-6 text-slate-600">{course.reason}</p>
               </div>
             ))}
           </div>
