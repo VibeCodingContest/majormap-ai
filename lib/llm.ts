@@ -18,12 +18,19 @@ const roadmapPhaseSchema = z.object({
   courseIds: z.array(z.string()),
 });
 
+const certificationRecommendationSchema = z.object({
+  name: z.string(),
+  reason: z.string(),
+  priority: z.enum(["high", "medium", "low"]).optional(),
+});
+
 const explainResponseSchema = z.object({
   headline: z.string(),
   fitSummary: z.string(),
   evidence: z.array(z.string()),
   caution: z.string(),
   roadmap: z.array(roadmapPhaseSchema),
+  recommendedCertifications: z.array(certificationRecommendationSchema),
 });
 
 function buildFallback(
@@ -77,6 +84,7 @@ function buildFallback(
         ? rec.confidenceSummary
         : "현재 점수 기준으로는 방향성과 추천 근거가 함께 확인됩니다.",
     roadmap,
+    recommendedCertifications: rec.recommendedCertifications,
   };
 }
 
@@ -119,6 +127,9 @@ function buildPrompt(rec: CareerRecommendation, profile: StudentProfile): string
   "fitSummary": "방향성과 근거를 구분한 해설 (2~3문장)",
   "evidence": ["근거1", "근거2", "근거3"],
   "caution": "보완 포인트 한 문장",
+  "recommendedCertifications": [
+    { "name": "자격증명", "reason": "추천 이유", "priority": "high" }
+  ],
   "roadmap": [
     { "phase": 1, "title": "단계명", "description": "설명", "courseIds": [] },
     { "phase": 2, "title": "단계명", "description": "설명", "courseIds": [] },

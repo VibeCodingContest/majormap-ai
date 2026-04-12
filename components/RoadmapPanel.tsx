@@ -11,6 +11,14 @@ type Props = {
 export function RoadmapPanel({ data, onClose }: Props) {
   const evidence = Array.isArray(data.evidence) ? data.evidence : [];
   const roadmap = Array.isArray(data.roadmap) ? data.roadmap : [];
+  const recommendedCertifications = Array.isArray(data.recommendedCertifications)
+    ? data.recommendedCertifications
+    : [];
+  const priorityBadgeMap = {
+    high: { label: "우선", className: "bg-indigo-600 text-white" },
+    medium: { label: "권장", className: "bg-sky-100 text-sky-700" },
+    low: { label: "참고", className: "bg-slate-100 text-slate-600" },
+  } as const;
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -89,6 +97,34 @@ export function RoadmapPanel({ data, onClose }: Props) {
                       <p className="text-sm font-semibold text-slate-800">{phase.title}</p>
                       <p className="mt-1 text-sm leading-6 text-slate-600">{phase.description}</p>
                     </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {recommendedCertifications.length > 0 && (
+            <div>
+              <p className="mb-3 text-sm font-semibold text-slate-800">자격증 추천</p>
+              <div className="space-y-3">
+                {recommendedCertifications.map((cert) => (
+                  <div
+                    key={cert.name}
+                    className="grid gap-3 rounded-[18px] border border-slate-200 bg-white px-4 py-3 sm:grid-cols-[160px_minmax(0,1fr)] sm:items-start"
+                  >
+                    <div className="flex min-w-0 flex-col items-start gap-2">
+                      <span className="text-sm font-semibold leading-6 text-slate-800 break-keep">
+                        {cert.name}
+                      </span>
+                      {cert.priority ? (
+                        <span
+                          className={`inline-flex min-h-7 min-w-12 items-center justify-center rounded-full px-2.5 text-[11px] font-semibold ${priorityBadgeMap[cert.priority].className}`}
+                        >
+                          {priorityBadgeMap[cert.priority].label}
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="text-sm leading-6 text-slate-600">{cert.reason}</p>
                   </div>
                 ))}
               </div>

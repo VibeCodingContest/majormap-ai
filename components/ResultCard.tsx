@@ -86,6 +86,7 @@ function isExplainResponse(value: ExplainApiResponse): value is ExplainResponse 
     !("error" in value) &&
     Array.isArray(value.evidence) &&
     Array.isArray(value.roadmap) &&
+    Array.isArray(value.recommendedCertifications) &&
     typeof value.headline === "string" &&
     typeof value.fitSummary === "string" &&
     typeof value.caution === "string"

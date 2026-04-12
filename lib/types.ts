@@ -244,6 +244,7 @@ export type ExplainResponse = {
   evidence: string[];
   caution: string;
   roadmap: RoadmapPhase[];
+  recommendedCertifications: CertificationRecommendation[];
 };
 
 export type ExplainApiResponse =
