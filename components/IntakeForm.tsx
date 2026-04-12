@@ -177,6 +177,7 @@ export function IntakeForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const handledDemoParamRef = useRef<string | null>(searchParams.get("demo"));
+  const submitSectionRef = useRef<HTMLDivElement | null>(null);
   const demoParam = searchParams.get("demo");
 
   const visibleCourses = useMemo(() => getVisibleCoursesForProfile(profile), [profile]);
@@ -240,6 +241,13 @@ export function IntakeForm() {
     setInterestInput(selectedDemoProfile.profile.interestKeywords.join(", "));
     setLoading(false);
     setError(null);
+
+    window.setTimeout(() => {
+      submitSectionRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "end",
+      });
+    }, 120);
   }
 
   function resetForm() {
@@ -497,7 +505,10 @@ export function IntakeForm() {
           </div>
         ) : null}
 
-        <div className="flex flex-col gap-3 rounded-[22px] border border-slate-200 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <div
+          ref={submitSectionRef}
+          className="flex flex-col gap-3 rounded-[22px] border border-slate-200 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between"
+        >
           <div>
             <p className="text-sm font-semibold text-slate-900">입력 요약</p>
             <p className="mt-1 text-sm leading-6 text-slate-500">
