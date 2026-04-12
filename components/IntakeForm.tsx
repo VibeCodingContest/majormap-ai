@@ -327,24 +327,24 @@ export function IntakeForm() {
     >
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(260px,0.85fr)]">
         <section className="rounded-[22px] bg-slate-50 p-4">
-          <div className="mb-4">
-            <p className="text-sm font-semibold tracking-wide text-slate-400">Step 1</p>
-            <h3 className="mt-1 text-lg font-black tracking-tight text-slate-950">기본 정보</h3>
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold tracking-wide text-slate-400">Step 1</p>
+              <h3 className="mt-1 text-lg font-black tracking-tight text-slate-950">기본 정보</h3>
+            </div>
+            <button
+              type="button"
+              onClick={resetForm}
+              className="inline-flex min-h-9 items-center justify-center rounded-xl bg-indigo-600 px-3.5 text-xs font-semibold text-white shadow-[0_18px_40px_-24px_rgba(79,70,229,0.75)] transition-colors hover:bg-indigo-500"
+            >
+              초기화
+            </button>
           </div>
 
           <div className="mb-4 rounded-[18px] border border-slate-200 bg-white p-3.5">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-xs font-semibold tracking-wide text-slate-400">Demo Profile</p>
-                <p className="mt-1 text-sm font-semibold text-slate-900">데모 프로필로 빠르게 입력하기</p>
-              </div>
-              <button
-                type="button"
-                onClick={resetForm}
-                className="inline-flex min-h-9 items-center justify-center rounded-xl bg-indigo-600 px-3.5 text-xs font-semibold text-white shadow-[0_18px_40px_-24px_rgba(79,70,229,0.75)] transition-colors hover:bg-indigo-500"
-              >
-                초기화
-              </button>
+            <div>
+              <p className="text-xs font-semibold tracking-wide text-slate-400">Demo Profile</p>
+              <p className="mt-1 text-sm font-semibold text-slate-900">데모 프로필로 빠르게 입력하기</p>
             </div>
 
             <div className="mt-3 flex flex-wrap gap-2">
