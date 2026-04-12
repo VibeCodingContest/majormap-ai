@@ -40,18 +40,23 @@ export function PlanSetupPanel({
   onChange,
   onSubmit,
 }: Props) {
+  const fieldGridClass =
+    options.semesterCount === 2
+      ? "grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4"
+      : "grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3";
+
   return (
-    <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.35)] sm:p-6">
-      <div className="mb-5">
-        <p className="text-sm font-semibold tracking-wide text-slate-400">Plan Setup</p>
-        <h3 className="mt-1 text-xl font-black tracking-tight text-slate-950">
+    <section className="max-w-4xl rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.35)] sm:p-5">
+      <div className="mb-3">
+        <p className="text-xs font-semibold tracking-wide text-slate-400">Plan Setup</p>
+        <h3 className="mt-1 text-base font-black tracking-tight text-slate-950 sm:text-lg">
           {careerName} 기준 학기 계획
         </h3>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className={fieldGridClass}>
         <div>
-          <label className="mb-2 block min-h-[4rem] text-sm font-medium leading-snug text-slate-700">
+          <label className="mb-1 block text-xs font-semibold leading-snug text-slate-600 sm:text-sm">
             다음 학기
           </label>
           <select
@@ -62,7 +67,7 @@ export function PlanSetupPanel({
                 nextSemester: e.target.value === "2" ? "2" : "1",
               })
             }
-            className="min-h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-900 focus:border-indigo-300 focus:bg-white focus:outline-none"
+            className="min-h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-900 focus:border-indigo-300 focus:bg-white focus:outline-none"
           >
             <option value="1">1학기</option>
             <option value="2">2학기</option>
@@ -70,7 +75,7 @@ export function PlanSetupPanel({
         </div>
 
         <div>
-          <label className="mb-2 block min-h-[4rem] text-sm font-medium leading-snug text-slate-700">
+          <label className="mb-1 block text-xs font-semibold leading-snug text-slate-600 sm:text-sm">
             다음 학기 목표 학점
           </label>
           <select
@@ -82,14 +87,14 @@ export function PlanSetupPanel({
                 firstSemesterTargetCredits: Number(e.target.value) as TargetCredits,
               })
             }
-            className="min-h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-900 focus:border-indigo-300 focus:bg-white focus:outline-none"
+            className="min-h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-900 focus:border-indigo-300 focus:bg-white focus:outline-none"
           >
             {renderTargetCreditOptions()}
           </select>
         </div>
 
         <div>
-          <label className="mb-2 block min-h-[4rem] text-sm font-medium leading-snug text-slate-700">
+          <label className="mb-1 block text-xs font-semibold leading-snug text-slate-600 sm:text-sm">
             계획 학기 수
           </label>
           <select
@@ -100,7 +105,7 @@ export function PlanSetupPanel({
                 semesterCount: Number(e.target.value) as 1 | 2,
               })
             }
-            className="min-h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-900 focus:border-indigo-300 focus:bg-white focus:outline-none"
+            className="min-h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-900 focus:border-indigo-300 focus:bg-white focus:outline-none"
           >
             <option value={1}>1개 학기</option>
             <option value={2}>2개 학기</option>
@@ -109,7 +114,7 @@ export function PlanSetupPanel({
 
         {options.semesterCount === 2 && (
           <div>
-            <label className="mb-2 block min-h-[4rem] text-sm font-medium leading-snug text-slate-700">
+            <label className="mb-1 block text-xs font-semibold leading-snug text-slate-600 sm:text-sm">
               그 다음 학기 목표 학점
             </label>
             <select
@@ -120,7 +125,7 @@ export function PlanSetupPanel({
                   secondSemesterTargetCredits: Number(e.target.value) as TargetCredits,
                 })
               }
-              className="min-h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-900 focus:border-indigo-300 focus:bg-white focus:outline-none"
+              className="min-h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-900 focus:border-indigo-300 focus:bg-white focus:outline-none"
             >
               {renderTargetCreditOptions()}
             </select>
@@ -129,8 +134,8 @@ export function PlanSetupPanel({
 
       </div>
 
-      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <label className="inline-flex min-h-11 w-fit items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2.5">
+        <label className="inline-flex min-h-9 w-fit items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700">
           <input
             type="checkbox"
             checked={options.includeLiberalArts}
@@ -149,14 +154,14 @@ export function PlanSetupPanel({
           type="button"
           onClick={onSubmit}
           disabled={loading}
-          className="inline-flex min-h-11 items-center justify-center rounded-2xl bg-indigo-600 px-6 text-sm font-semibold text-white shadow-[0_18px_40px_-24px_rgba(79,70,229,0.75)] transition-colors hover:bg-indigo-500 disabled:opacity-50"
+          className="inline-flex min-h-9 items-center justify-center rounded-xl bg-indigo-600 px-4 text-sm font-semibold text-white shadow-[0_18px_40px_-24px_rgba(79,70,229,0.75)] transition-colors hover:bg-indigo-500 disabled:opacity-50"
         >
           {loading ? "계획 생성 중..." : "다음 학기 계획 생성"}
         </button>
       </div>
 
       {error && (
-        <p className="mt-4 rounded-2xl bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
+        <p className="mt-3 rounded-xl bg-red-50 px-3.5 py-3 text-sm font-medium text-red-600">
           {error}
         </p>
       )}

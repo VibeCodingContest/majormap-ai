@@ -16,8 +16,6 @@ type Props = {
   onPlanSelect: (result: CareerRecommendation) => void;
   isPlanSelected: boolean;
   collapsed?: boolean;
-  selectedRetakeCourseIds: string[];
-  onRetakeCourseToggle: (courseId: string, checked: boolean) => void;
   children?: ReactNode;
 };
 
@@ -100,8 +98,6 @@ export function ResultCard({
   onPlanSelect,
   isPlanSelected,
   collapsed = false,
-  selectedRetakeCourseIds,
-  onRetakeCourseToggle,
   children,
 }: Props) {
   const [explainData, setExplainData] = useState<ExplainResponse | null>(null);
@@ -199,35 +195,35 @@ export function ResultCard({
   } as const;
 
   return (
-    <article className="flex h-full flex-col rounded-[30px] border border-slate-200 bg-white p-5 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.35)] sm:p-6">
-      <div className="mb-6 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+    <article className="flex h-full flex-col rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.35)] sm:p-5">
+      <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
-          <span className="inline-flex min-h-9 items-center rounded-full bg-indigo-50 px-3 text-xs font-semibold tracking-wide text-indigo-700">
+          <span className="inline-flex min-h-8 items-center rounded-full bg-indigo-50 px-3 text-[11px] font-semibold tracking-wide text-indigo-700">
             추천 진로
           </span>
-          <h2 className="mt-4 text-3xl font-black tracking-tight text-slate-950">
+          <h2 className="mt-3 text-xl font-black tracking-tight text-slate-950 sm:text-2xl">
             {result.careerName}
           </h2>
-          <p className="mt-3 text-[15px] leading-7 text-slate-600">{result.summary}</p>
+          <p className="mt-2 text-sm leading-6 text-slate-600">{result.summary}</p>
         </div>
 
-        <div className="grid shrink-0 grid-cols-2 gap-3 sm:w-[220px] sm:grid-cols-1">
-          <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4 text-left sm:text-right">
+        <div className="grid shrink-0 grid-cols-2 gap-2 sm:w-[170px] sm:grid-cols-1">
+          <div className="rounded-[16px] border border-slate-200 bg-slate-50 px-3 py-2.5 text-left sm:text-right">
             <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
               {result.scoreExplanation?.fitLabel ?? "적합도"}
             </p>
             <div className="flex items-baseline justify-start gap-1 sm:justify-end">
-              <span className={`text-3xl font-black ${fitScoreColor}`}>{fitScore}</span>
+              <span className={`text-2xl font-black ${fitScoreColor}`}>{fitScore}</span>
               <span className="text-sm text-slate-400">/100</span>
             </div>
           </div>
 
-          <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4 text-left sm:text-right">
+          <div className="rounded-[16px] border border-slate-200 bg-slate-50 px-3 py-2.5 text-left sm:text-right">
             <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
               {result.scoreExplanation?.confidenceLabel ?? "확신도"}
             </p>
             <div className="flex items-baseline justify-start gap-1 sm:justify-end">
-              <span className="text-2xl font-black text-slate-900">{confidenceScore}</span>
+              <span className="text-xl font-black text-slate-900">{confidenceScore}</span>
               <span className="text-sm text-slate-400">/100</span>
             </div>
           </div>
@@ -379,11 +375,11 @@ export function ResultCard({
         </div>
       )}
 
-      <div className={`mt-6 flex flex-wrap gap-3 pt-5 ${collapsed ? "mt-0 border-none pt-0" : "border-t border-slate-100"}`}>
+      <div className={`mt-4 flex flex-wrap gap-2.5 pt-4 ${collapsed ? "mt-0 border-none pt-0" : "border-t border-slate-100"}`}>
         <button
           type="button"
           onClick={() => onPlanSelect(result)}
-          className={`inline-flex min-h-11 flex-1 items-center justify-center rounded-2xl px-5 text-sm font-semibold transition-all sm:flex-none ${
+          className={`inline-flex min-h-10 flex-1 items-center justify-center rounded-xl px-4 text-sm font-semibold transition-all sm:flex-none ${
             isPlanSelected
               ? "bg-indigo-600 text-white shadow-[0_18px_40px_-24px_rgba(79,70,229,0.75)] hover:bg-indigo-700"
               : "border border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50"
@@ -396,7 +392,7 @@ export function ResultCard({
           type="button"
           onClick={handleExplain}
           disabled={explainLoading}
-          className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-2xl border border-indigo-200 bg-white px-5 text-sm font-semibold text-indigo-600 transition-colors hover:bg-indigo-50 disabled:opacity-50 sm:flex-none"
+          className="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-white px-4 text-sm font-semibold text-indigo-600 transition-colors hover:bg-indigo-50 disabled:opacity-50 sm:flex-none"
         >
           {explainLoading ? (
             <>
@@ -413,45 +409,13 @@ export function ResultCard({
           )}
         </button>
 
-        {result.retakeCourseIds.length > 0 && !collapsed ? (
-          <div className="mt-3 w-full rounded-[24px] border border-sky-100 bg-sky-50/70 p-4">
-            <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-sky-800">
-              재수강 반영 우선 과목 선택
-            </p>
-            <div className="flex flex-wrap gap-2.5">
-              {result.retakeCourseIds.map((courseId) => {
-                const checked = selectedRetakeCourseIds.includes(courseId);
-                const courseName = courseMap[courseId]?.name ?? courseId;
-                return (
-                  <label
-                    key={courseId}
-                    className="group flex min-h-11 cursor-pointer items-center gap-2 rounded-2xl border border-sky-200 bg-white px-3.5 py-2 transition-colors hover:border-sky-300"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={(e) => onRetakeCourseToggle(courseId, e.target.checked)}
-                      className="h-4 w-4 rounded border-sky-300 accent-sky-500"
-                    />
-                    <span className="text-sm font-semibold text-sky-900 group-hover:text-sky-700">
-                      {courseName}
-                    </span>
-                  </label>
-                );
-              })}
-            </div>
-          </div>
-        ) : null}
-
         {explainError ? (
           <p className="mt-2 w-full text-center text-sm font-medium text-red-500">{explainError}</p>
         ) : null}
       </div>
 
       {showPanel && explainData ? (
-        <div className="mt-4">
-          <RoadmapPanel data={explainData} onClose={() => setShowPanel(false)} />
-        </div>
+        <RoadmapPanel data={explainData} onClose={() => setShowPanel(false)} />
       ) : null}
 
       {children}

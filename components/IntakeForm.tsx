@@ -73,16 +73,16 @@ function CourseSelectionCard({
   return (
     <article
       className={[
-        "rounded-[24px] border p-4 transition-colors",
+        "rounded-[20px] border p-3 transition-colors",
         checked
           ? "border-indigo-200 bg-indigo-50/60"
           : "border-slate-200 bg-white",
       ].join(" ")}
     >
-      <div className="flex flex-col gap-4 md:grid md:grid-cols-[minmax(0,1fr)_88px] md:items-start md:gap-3">
+      <div className="flex flex-col gap-3 md:grid md:grid-cols-[minmax(0,1fr)_80px] md:items-start md:gap-3">
         <label
           htmlFor={checkboxId}
-          className="flex min-h-11 min-w-0 cursor-pointer items-start gap-3"
+          className="flex min-h-10 min-w-0 cursor-pointer items-start gap-2.5"
         >
           <input
             id={checkboxId}
@@ -92,15 +92,15 @@ function CourseSelectionCard({
             className="mt-1 h-4 w-4 shrink-0 rounded border-slate-300 accent-indigo-600"
           />
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-slate-900">{course.name}</p>
+            <p className="text-[13px] font-semibold text-slate-900 sm:text-sm">{course.name}</p>
             <p className="mt-1 text-xs uppercase tracking-wide text-slate-400">
               과목코드 {course.code}
             </p>
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-2 flex flex-wrap gap-1.5">
               {course.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="inline-flex min-h-7 items-center whitespace-nowrap rounded-full bg-white px-2.5 text-[10px] font-medium text-slate-600 ring-1 ring-slate-200"
+                  className="inline-flex min-h-6 items-center whitespace-nowrap rounded-full bg-white px-2 text-[10px] font-medium text-slate-600 ring-1 ring-slate-200"
                 >
                   {skillTagLabels[tag] ?? tag}
                 </span>
@@ -109,7 +109,7 @@ function CourseSelectionCard({
           </div>
         </label>
 
-        <div className="w-full md:w-[88px] md:shrink-0">
+        <div className="w-full md:w-[80px] md:shrink-0">
           <label htmlFor={gradeSelectId} className="sr-only">
             {course.name} 성적 선택
           </label>
@@ -119,7 +119,7 @@ function CourseSelectionCard({
             value={grade}
             onChange={(e) => onGradeChange(e.target.value as "" | GradeValue)}
             disabled={!checked}
-            className="min-h-9 w-full rounded-2xl border border-slate-200 bg-white px-2 text-[11px] font-medium text-slate-700 transition-colors focus:border-indigo-300 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+            className="min-h-8 w-full rounded-xl border border-slate-200 bg-white px-2 text-[11px] font-medium text-slate-700 transition-colors focus:border-indigo-300 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
           >
             <option value="">성적 선택</option>
             {gradeOptions.map((value) => (
@@ -159,7 +159,7 @@ function FieldWrapper({
 }) {
   return (
     <div>
-      <label className="mb-2 block text-sm font-medium text-slate-700">
+      <label className="mb-1.5 block text-sm font-medium text-slate-700">
         {label}
         {hint ? <span className="ml-1 text-slate-400">{hint}</span> : null}
       </label>
@@ -230,6 +230,26 @@ export function IntakeForm() {
     }));
   }
 
+  function applyDemoProfile(idx: number) {
+    const selectedDemoProfile = demoProfiles[idx];
+    setProfile({
+      ...selectedDemoProfile.profile,
+      secondaryMajor: normalizeSecondaryMajor(selectedDemoProfile.profile.secondaryMajor),
+    });
+    setSelectedCourses(buildSelectedCourseState(selectedDemoProfile.profile));
+    setInterestInput(selectedDemoProfile.profile.interestKeywords.join(", "));
+    setLoading(false);
+    setError(null);
+  }
+
+  function resetForm() {
+    setProfile(createDefaultProfile());
+    setSelectedCourses({});
+    setInterestInput("");
+    setLoading(false);
+    setError(null);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const payload = buildCurrentProfile();
@@ -280,11 +300,7 @@ export function IntakeForm() {
     handledDemoParamRef.current = demoParam;
 
     if (demoParam === null) {
-      setProfile(createDefaultProfile());
-      setSelectedCourses({});
-      setInterestInput("");
-      setLoading(false);
-      setError(null);
+      resetForm();
       return;
     }
 
@@ -293,26 +309,48 @@ export function IntakeForm() {
       return;
     }
 
-    const selectedDemoProfile = demoProfiles[demoIndex];
-    setProfile({
-      ...selectedDemoProfile.profile,
-      secondaryMajor: normalizeSecondaryMajor(selectedDemoProfile.profile.secondaryMajor),
-    });
-    setSelectedCourses(buildSelectedCourseState(selectedDemoProfile.profile));
-    setInterestInput(selectedDemoProfile.profile.interestKeywords.join(", "));
-    setLoading(false);
-    setError(null);
+    applyDemoProfile(demoIndex);
   }, [demoParam]);
 
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-5 rounded-[30px] border border-slate-200 bg-white/92 p-5 shadow-[0_30px_80px_-48px_rgba(15,23,42,0.42)] backdrop-blur sm:p-6"
+      className="space-y-4 rounded-[28px] border border-slate-200 bg-white/92 p-4 shadow-[0_30px_80px_-48px_rgba(15,23,42,0.42)] backdrop-blur sm:p-5"
     >
-        <section className="rounded-[24px] bg-slate-50 p-5">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(260px,0.85fr)]">
+        <section className="rounded-[22px] bg-slate-50 p-4">
           <div className="mb-4">
             <p className="text-sm font-semibold tracking-wide text-slate-400">Step 1</p>
-            <h3 className="mt-1 text-xl font-black tracking-tight text-slate-950">기본 정보</h3>
+            <h3 className="mt-1 text-lg font-black tracking-tight text-slate-950">기본 정보</h3>
+          </div>
+
+          <div className="mb-4 rounded-[18px] border border-slate-200 bg-white p-3.5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs font-semibold tracking-wide text-slate-400">Demo Profile</p>
+                <p className="mt-1 text-sm font-semibold text-slate-900">데모 프로필로 빠르게 입력하기</p>
+              </div>
+              <button
+                type="button"
+                onClick={resetForm}
+                className="inline-flex min-h-9 items-center justify-center rounded-xl bg-indigo-600 px-3.5 text-xs font-semibold text-white shadow-[0_18px_40px_-24px_rgba(79,70,229,0.75)] transition-colors hover:bg-indigo-500"
+              >
+                초기화
+              </button>
+            </div>
+
+            <div className="mt-3 flex flex-wrap gap-2">
+              {demoProfiles.map((demoProfile, idx) => (
+                <button
+                  key={demoProfile.label}
+                  type="button"
+                  onClick={() => applyDemoProfile(idx)}
+                  className="inline-flex min-h-9 items-center rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-100"
+                >
+                  {demoProfile.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -320,7 +358,7 @@ export function IntakeForm() {
               <select
                 value={profile.studentYearTrack}
                 onChange={(e) => setProfile((p) => ({ ...p, studentYearTrack: e.target.value }))}
-                className="min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-900 focus:border-indigo-300 focus:outline-none"
+                className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-medium text-slate-900 focus:border-indigo-300 focus:outline-none"
               >
                 {YEAR_TRACKS.map((y) => (
                   <option key={y} value={y}>
@@ -342,7 +380,7 @@ export function IntakeForm() {
                       p.secondaryMajor === nextPrimaryMajor ? undefined : p.secondaryMajor,
                   }));
                 }}
-                className="min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-900 focus:border-indigo-300 focus:outline-none"
+                className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-medium text-slate-900 focus:border-indigo-300 focus:outline-none"
               >
                 {PRIMARY_MAJORS.map((major) => (
                   <option key={major} value={major}>
@@ -361,7 +399,7 @@ export function IntakeForm() {
                     secondaryMajor: e.target.value === "없음" ? undefined : e.target.value,
                   }))
                 }
-                className="min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-900 focus:border-indigo-300 focus:outline-none"
+                className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-medium text-slate-900 focus:border-indigo-300 focus:outline-none"
               >
                 {secondaryMajorOptions.map((major) => (
                   <option key={major} value={major}>
@@ -373,50 +411,10 @@ export function IntakeForm() {
           </div>
         </section>
 
-        <section className="rounded-[24px] bg-slate-50 p-5">
-          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-sm font-semibold tracking-wide text-slate-400">Step 2</p>
-              <h3 className="mt-1 text-xl font-black tracking-tight text-slate-950">수강 과목과 성적</h3>
-              <p className="mt-2 text-sm leading-7 text-slate-500">
-                수강한 과목을 선택하고 해당 과목의 성적을 입력해 주세요.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              <span className="inline-flex min-h-10 items-center rounded-full bg-white px-4 text-sm font-semibold text-slate-700 ring-1 ring-slate-200">
-                노출 과목 {visibleCourses.length}개
-              </span>
-              <span className="inline-flex min-h-10 items-center rounded-full bg-indigo-50 px-4 text-sm font-semibold text-indigo-700 ring-1 ring-indigo-100">
-                선택 {selectedCourseCount}개
-              </span>
-            </div>
-          </div>
-
-          {visibleCourses.length === 0 ? (
-            <div className="rounded-[22px] border border-dashed border-slate-300 bg-white px-4 py-6 text-sm leading-7 text-slate-500">
-              선택한 학번 또는 전공 기준으로 표시할 과목이 없습니다.
-            </div>
-          ) : (
-            <div className="grid max-h-[34rem] gap-3 overflow-y-auto pr-1 xl:grid-cols-2">
-              {visibleCourses.map((course) => (
-                <CourseSelectionCard
-                  key={course.id}
-                  course={course}
-                  checked={selectedCourses[course.id]?.checked ?? false}
-                  grade={selectedCourses[course.id]?.grade ?? ""}
-                  onToggle={() => toggleCourse(course.id)}
-                  onGradeChange={(grade) => updateCourseGrade(course.id, grade)}
-                />
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section className="rounded-[24px] bg-slate-50 p-5">
-          <div className="mb-4">
-            <p className="text-sm font-semibold tracking-wide text-slate-400">Step 3</p>
-            <h3 className="mt-1 text-xl font-black tracking-tight text-slate-950">관심 분야</h3>
+        <section className="rounded-[22px] bg-slate-50 p-4">
+          <div className="mb-3">
+            <p className="text-sm font-semibold tracking-wide text-slate-400">Step 2</p>
+            <h3 className="mt-1 text-lg font-black tracking-tight text-slate-950">관심 분야</h3>
           </div>
 
           <FieldWrapper label="관심 키워드" hint="쉼표로 구분">
@@ -425,7 +423,7 @@ export function IntakeForm() {
               value={interestInput}
               onChange={(e) => setInterestInput(e.target.value)}
               placeholder="예: backend, server, data, product"
-              className="min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none"
+              className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none"
             />
           </FieldWrapper>
 
@@ -444,13 +442,54 @@ export function IntakeForm() {
                     return [...next, keyword].join(", ");
                   })
                 }
-                className="inline-flex min-h-10 items-center rounded-full border border-slate-200 bg-white px-4 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
+                className="inline-flex min-h-9 items-center rounded-full border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50"
               >
                 {keyword}
               </button>
             ))}
           </div>
         </section>
+      </div>
+
+      <section className="rounded-[22px] bg-slate-50 p-4">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold tracking-wide text-slate-400">Step 3</p>
+              <h3 className="mt-1 text-lg font-black tracking-tight text-slate-950">성적 입력</h3>
+              <p className="mt-1.5 text-sm leading-6 text-slate-500">
+                수강한 과목을 선택하고 해당 과목의 성적을 입력해 주세요.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <span className="inline-flex min-h-9 items-center rounded-full bg-white px-3.5 text-xs font-semibold text-slate-700 ring-1 ring-slate-200 sm:text-sm">
+                노출 과목 {visibleCourses.length}개
+              </span>
+              <span className="inline-flex min-h-9 items-center rounded-full bg-indigo-50 px-3.5 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-100 sm:text-sm">
+                선택 {selectedCourseCount}개
+              </span>
+            </div>
+          </div>
+
+          {visibleCourses.length === 0 ? (
+            <div className="rounded-[20px] border border-dashed border-slate-300 bg-white px-4 py-5 text-sm leading-6 text-slate-500">
+              선택한 학번 또는 전공 기준으로 표시할 과목이 없습니다.
+            </div>
+          ) : (
+            <div className="grid max-h-[25rem] gap-2.5 overflow-y-auto pr-1 md:grid-cols-2 xl:grid-cols-3">
+              {visibleCourses.map((course) => (
+                <CourseSelectionCard
+                  key={course.id}
+                  course={course}
+                  checked={selectedCourses[course.id]?.checked ?? false}
+                  grade={selectedCourses[course.id]?.grade ?? ""}
+                  onToggle={() => toggleCourse(course.id)}
+                  onGradeChange={(grade) => updateCourseGrade(course.id, grade)}
+                />
+              ))}
+            </div>
+          )}
+      </section>
 
         {error ? (
           <div className="rounded-[22px] border border-red-200 bg-red-50 px-4 py-4 text-sm font-medium text-red-600">
@@ -458,10 +497,10 @@ export function IntakeForm() {
           </div>
         ) : null}
 
-        <div className="flex flex-col gap-4 rounded-[24px] border border-slate-200 bg-white px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 rounded-[22px] border border-slate-200 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-semibold text-slate-900">입력 요약</p>
-            <p className="mt-1 text-sm leading-7 text-slate-500">
+            <p className="mt-1 text-sm leading-6 text-slate-500">
               {selectedCourseCount}개 과목과 {interestInput.split(",").map((item) => item.trim()).filter(Boolean).length}개 관심 키워드가 추천에 반영됩니다.
             </p>
           </div>
@@ -469,7 +508,7 @@ export function IntakeForm() {
           <button
             type="submit"
             disabled={loading}
-            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-6 text-sm font-semibold text-white shadow-[0_18px_40px_-24px_rgba(79,70,229,0.75)] transition-colors hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 disabled:opacity-50"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-5 text-sm font-semibold text-white shadow-[0_18px_40px_-24px_rgba(79,70,229,0.75)] transition-colors hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 disabled:opacity-50"
           >
             {loading ? (
               <>

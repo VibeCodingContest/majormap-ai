@@ -6,14 +6,13 @@ import {
   CareerRecommendation,
   PlanApiResponse,
   PlanOptions,
-  PlanResult,
   RecommendApiResponse,
   StudentProfile,
 } from "@/lib/types";
 import { ResultCard } from "@/components/ResultCard";
 import { PlanSetupPanel } from "@/components/PlanSetupPanel";
-import { SemesterPlanPanel } from "@/components/SemesterPlanPanel";
 import Link from "next/link";
+import { courseMap } from "@/lib/sample-data";
 
 function createDefaultPlanOptions(): PlanOptions {
   return {
@@ -45,13 +44,13 @@ export default function ResultPage() {
 
   const [selectedCareer, setSelectedCareer] = useState<CareerRecommendation | null>(null);
   const [planOptions, setPlanOptions] = useState<PlanOptions>(() => createDefaultPlanOptions());
-  const [planResult, setPlanResult] = useState<PlanResult | null>(null);
   const [planLoading, setPlanLoading] = useState(false);
   const [planError, setPlanError] = useState<string | null>(null);
   const [retakeSelectionMap, setRetakeSelectionMap] = useState<Record<string, string[]>>({});
 
   const recommendAbortControllerRef = useRef<AbortController | null>(null);
   const planAbortControllerRef = useRef<AbortController | null>(null);
+  const planSectionRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     const rawPayload = sessionStorage.getItem("majormap_intake_payload");
@@ -74,6 +73,19 @@ export default function ResultPage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!selectedCareer) {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      planSectionRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  }, [selectedCareer]);
 
   async function fetchRecommendations(payload: StudentProfile) {
     setLoading(true);
@@ -118,6 +130,13 @@ export default function ResultPage() {
     });
   }
 
+  function selectAllRetakeCourses(careerId: string, courseIds: string[]) {
+    setRetakeSelectionMap((prev) => ({
+      ...prev,
+      [careerId]: [...courseIds],
+    }));
+  }
+
   async function handlePlanSubmit() {
     if (!selectedCareer || !profile) return;
 
@@ -155,10 +174,10 @@ export default function ResultPage() {
         throw new Error("error" in data ? data.error : "수강 계획 생성 중 오류가 발생했습니다.");
       }
 
-      setPlanResult(data.result);
+      sessionStorage.setItem("majormap_plan_result", JSON.stringify(data.result));
+      router.push("/recommend/plan");
     } catch (caughtError) {
       if (isAbortError(caughtError)) return;
-      setPlanResult(null);
       setPlanError("수강 계획 생성 중 오류가 발생했습니다. 다시 시도해주세요.");
     } finally {
       if (planAbortControllerRef.current === controller) {
@@ -201,17 +220,14 @@ export default function ResultPage() {
   }
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
-      <section className="mb-8 rounded-[30px] border border-slate-200 bg-white/92 p-5 shadow-[0_30px_80px_-48px_rgba(15,23,42,0.42)] sm:p-7">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-          <div className="min-w-0">
-            <span className="inline-flex min-h-10 items-center rounded-full border border-indigo-200 bg-indigo-50 px-4 text-sm font-semibold text-indigo-700">
-              Recommendation Result
-            </span>
-            <h1 className="mt-4 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">
+    <main className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
+      <section className="mb-5 rounded-[26px] border border-slate-200 bg-white/92 p-4 shadow-[0_30px_80px_-48px_rgba(15,23,42,0.42)] sm:p-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div id="top-matches" className="min-w-0 scroll-mt-4">
+            <h1 className="text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">
               추천 결과
             </h1>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-500 sm:text-base">
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
               {profile?.studentYearTrack}학번 · {profile?.primaryMajor}
               {profile?.secondaryMajor ? ` + ${profile.secondaryMajor}` : ""}
               {profile?.interestKeywords.length ? ` · 관심사: ${profile.interestKeywords.join(", ")}` : ""}
@@ -221,7 +237,7 @@ export default function ResultPage() {
           <div className="flex shrink-0 flex-col gap-3 sm:flex-row">
             <Link
               href="/recommend"
-              className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+              className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
             >
               입력 다시 하기
             </Link>
@@ -235,72 +251,114 @@ export default function ResultPage() {
           <p className="mt-2 text-sm leading-7 text-slate-500">입력하신 학번, 전공, 수강 과목을 다시 확인해보세요.</p>
         </section>
       ) : (
-        <section>
-          <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-sm font-semibold tracking-wide text-slate-400">Top Matches</p>
-              <h2 className="mt-1 text-2xl font-black tracking-tight text-slate-950">AI 추천 진로 TOP {results.length}</h2>
+        <section className="space-y-5">
+          <div className="min-w-0">
+            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-xs font-semibold tracking-wide text-slate-400">Top Matches</p>
+                <h2 className="mt-1 text-xl font-black tracking-tight text-slate-950">
+                  AI 추천 진로 TOP {results.length}
+                </h2>
+              </div>
+              <p className="text-sm leading-6 text-slate-500">
+                원하는 진로를 선택하면 오른쪽에서 계획이 바로 바뀝니다.
+              </p>
             </div>
-            <p className="text-sm leading-6 text-slate-500">카드를 선택하면 학기 계획 생성으로 바로 이어집니다.</p>
-          </div>
 
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            {results.map((result) => {
-              const isThisSelected = selectedCareer?.careerId === result.careerId;
-              if (selectedCareer && !isThisSelected) return null;
+            <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+              {results.map((result) => {
+                const isThisSelected = selectedCareer?.careerId === result.careerId;
 
-              return (
-                <div
-                  key={result.careerId}
-                  className={isThisSelected ? "md:col-span-2 md:flex md:justify-center" : ""}
-                >
-                  <div className={isThisSelected ? "w-full md:max-w-[36rem]" : "w-full"}>
-                    <ResultCard
-                      result={result}
-                      profile={profile!}
-                      onPlanSelect={(nextCareer) => {
-                        if (selectedCareer?.careerId === nextCareer.careerId) {
-                          setSelectedCareer(null);
-                          setPlanResult(null);
+                return (
+                  <div key={result.careerId}>
+                    <div className={isThisSelected ? "rounded-[26px] ring-2 ring-indigo-200" : ""}>
+                      <ResultCard
+                        result={result}
+                        profile={profile!}
+                        onPlanSelect={(nextCareer) => {
+                          if (selectedCareer?.careerId === nextCareer.careerId) {
+                            setSelectedCareer(null);
+                            setPlanError(null);
+                            return;
+                          }
+                          setSelectedCareer(nextCareer);
                           setPlanError(null);
-                          return;
-                        }
-                        setSelectedCareer(nextCareer);
-                        setPlanResult(null);
-                        setPlanError(null);
-                      }}
-                      isPlanSelected={isThisSelected}
-                      collapsed={isThisSelected}
-                      selectedRetakeCourseIds={retakeSelectionMap[result.careerId] ?? []}
-                      onRetakeCourseToggle={(courseId, checked) =>
-                        toggleRetakeCourseSelection(result.careerId, courseId, checked)
-                      }
-                    >
-                      {isThisSelected && (
-                        <div
-                          id={`plan-inline-${result.careerId}`}
-                          tabIndex={-1}
-                          className="mt-6 border-t border-slate-100 pt-6 outline-none"
-                        >
-                          <PlanSetupPanel
-                            careerName={selectedCareer.careerName}
-                            options={planOptions}
-                            loading={planLoading}
-                            error={planError}
-                            onChange={setPlanOptions}
-                            onSubmit={handlePlanSubmit}
-                          />
-                          {planResult?.selectedCareer.careerId === result.careerId && (
-                            <SemesterPlanPanel result={planResult} />
-                          )}
-                        </div>
-                      )}
-                    </ResultCard>
+                        }}
+                        isPlanSelected={isThisSelected}
+                        collapsed={true}
+                      />
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
+
+          {selectedCareer ? (
+            <section ref={planSectionRef} className="space-y-3 scroll-mt-4">
+              {selectedCareer.retakeCourseIds.length > 0 ? (
+                <section className="rounded-[22px] border border-sky-100 bg-sky-50/80 p-4 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.25)] sm:p-5">
+                  <div className="flex items-center gap-3">
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-sky-800">
+                      재수강 반영 우선 과목 선택
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        selectAllRetakeCourses(
+                          selectedCareer.careerId,
+                          selectedCareer.retakeCourseIds
+                        )
+                      }
+                      className="inline-flex min-h-7 items-center rounded-full border border-sky-200 bg-white px-2.5 text-[11px] font-semibold text-sky-700 transition-colors hover:bg-sky-100"
+                    >
+                      모두 선택
+                    </button>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    {selectedCareer.retakeCourseIds.map((courseId) => {
+                      const checked =
+                        (retakeSelectionMap[selectedCareer.careerId] ?? []).includes(courseId);
+                      const courseName = courseMap[courseId]?.name ?? courseId;
+
+                      return (
+                        <label
+                          key={courseId}
+                          className="group inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-xl border border-sky-200 bg-white px-3.5 py-2 transition-colors hover:border-sky-300"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(e) =>
+                              toggleRetakeCourseSelection(
+                                selectedCareer.careerId,
+                                courseId,
+                                e.target.checked
+                              )
+                            }
+                            className="h-4 w-4 rounded border-sky-300 accent-sky-500"
+                          />
+                          <span className="text-sm font-semibold text-sky-900 group-hover:text-sky-700">
+                            {courseName}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </section>
+              ) : null}
+
+              <PlanSetupPanel
+                careerName={selectedCareer.careerName}
+                options={planOptions}
+                loading={planLoading}
+                error={planError}
+                onChange={setPlanOptions}
+                onSubmit={handlePlanSubmit}
+              />
+            </section>
+          ) : null}
         </section>
       )}
     </main>
