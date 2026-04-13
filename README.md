@@ -1,130 +1,167 @@
 # MajorMap AI
 
-MajorMap AI는 대학생의 수강 이력, 학번별 샘플 커리큘럼, 전공 조합을 바탕으로 적합한 진로를 추천하고, 선택한 진로 기준 다음 1~2개 학기 수강 계획까지 이어주는 규칙 기반 진로 설계 웹앱이다. 핵심 추천과 계획 기능은 외부 LLM 없이 동작하며, AI 설명 기능은 보조 계층으로만 사용해 제출 안정성과 해석 가능성을 함께 확보했다.
+MajorMap AI는 대학생의 수강 이력, 전공 조합, 관심 키워드를 바탕으로 진로 적합도를 추천하고 다음 1~2개 학기 수강 계획까지 생성하는 진로 설계 MVP입니다.
+
+핵심 추천과 계획 생성은 규칙 기반으로 동작하며, AI는 결과 설명을 보조하는 용도로만 사용합니다. 추천 결과 화면에서는 적합도, 확신도, 보유 역량, 부족 역량, 추천 과목, 재수강 권장 과목을 확인할 수 있습니다.
 
 ---
 
-## 문제 정의
+## 주요 기능
 
-복수전공·심화전공 대학생은 자신이 들은 과목이 어떤 세부 진로와 연결되는지 파악하기 어렵다. 학번에 따라 커리큘럼이 다르기 때문에 선배의 조언이 그대로 통하지 않는 경우도 많다.
+- 학생 프로필 입력
+  - 학번 트랙, 주전공/복수전공, 수강 과목, 성적, 관심 키워드를 입력할 수 있습니다.
+- 진로 추천
+  - 입력한 이력을 바탕으로 Top 3 진로를 추천합니다.
+  - 각 결과마다 적합도, 확신도, 보유 역량, 부족 역량, 추천 과목을 보여줍니다.
+- 성적 기반 보완 제안
+  - 낮은 성적 때문에 불리하게 작용하는 과목이 있으면 경고를 보여주고, 재수강이 필요한 과목을 따로 안내합니다.
+- 다음 학기 계획 생성
+  - 선택한 진로를 기준으로 다음 1개 또는 2개 학기 계획을 생성합니다.
+  - 목표 학점은 12~21학점 범위에서 조정할 수 있습니다.
+  - 교양 포함 여부와 재수강 반영 여부도 함께 선택할 수 있습니다.
+- AI 해설
+  - 추천 결과를 자연어로 풀어주는 해설 패널을 제공합니다.
+  - `OPENAI_API_KEY`가 없거나 응답이 실패해도 fallback 설명으로 흐름이 끊기지 않습니다.
 
-이 서비스는 수강 이력과 전공 조합을 구조화된 규칙으로 분석해 진로 적합도와 다음 학기 계획을 계산하고, LLM은 그 결과를 한국어로 설명하는 보조 역할만 맡는다.
+---
+
+## 서비스 흐름
+
+1. `/recommend`에서 학생 정보를 입력합니다.
+2. 입력값은 세션 스토리지에 저장되고 `/recommend/result`로 이동합니다.
+3. `POST /api/recommend`가 규칙 기반으로 진로 Top 3를 계산합니다.
+4. 결과 카드에서 원하는 진로를 고르면 계획 옵션 패널이 열립니다.
+5. 재수강 과목과 목표 학점을 고른 뒤 `POST /api/plan`으로 다음 학기 계획을 생성합니다.
+6. `/recommend/plan`에서 학기별 추천 과목, 남은 학점 가이드, 이월 과목을 확인합니다.
+7. 필요하면 `POST /api/explain`으로 AI 해설도 함께 볼 수 있습니다.
 
 ---
 
 ## MVP 범위
 
-이번 버전에서 지원하는 범위는 아래로 제한된다.
+현재 버전은 제한된 범위의 MVP입니다.
 
-| 항목 | 지원 범위 |
-|---|---|
-| 데이터셋 | 특정 실대학명이 아닌 샘플 커리큘럼 1종 |
+| 항목 | 현재 지원 범위 |
+| --- | --- |
+| 데이터셋 | 샘플 커리큘럼 1종 |
 | 학과군 | 컴퓨터공학, 경영학 |
-| 학번 트랙 | 2023학번, 2024학번 |
-| 진로 | 백엔드 개발자, 프로덕트 매니저, 데이터 분석가, 솔루션 컨설턴트 (4개) |
-| 과목 | 17개 (샘플 데이터 기반) |
+| 학번 트랙 | 2023, 2024 |
+| 추천 진로 | 백엔드 개발자, 프로덕트 매니저, 데이터 분석가, 솔루션 컨설턴트 |
+| 과목 | 샘플 데이터 17개 |
 
-> 현재 과목명과 과목코드는 실제 대학 학사 시스템을 그대로 반영한 것이 아니라, MVP 검증을 위한 샘플 커리큘럼 데이터다. 과목코드는 화면 내 구분을 위한 내부 식별자다.
+제외 범위:
 
-아래 기능은 이번 MVP에 포함되지 않는다.
-
-- 실제 학사 시스템 연동
+- 실제 대학 학사 시스템 연동
 - 로그인 / 회원가입
-- 모든 학과 지원
 - 실제 채용 공고 연동
+- 모든 학과 / 모든 학번 지원
+
+> 과목명과 과목코드는 실제 대학 시스템을 그대로 복제한 데이터가 아니라, MVP 검증용 샘플 데이터입니다.
 
 ---
 
-## 기술 구조
+## 추천 로직
 
+추천 자체는 LLM에 맡기지 않았습니다. 아래 기준을 조합해 보수적으로 계산합니다.
+
+- 필수 역량 커버리지
+- 선택 역량 커버리지
+- 전공 적합도
+- 관심 키워드 보너스
+- 관련 과목 수가 적을 때의 low-evidence penalty
+- 성적 기반 경고와 재수강 필요 과목 반영
+
+설명 API가 실패해도 추천과 계획 기능은 그대로 동작합니다.
+
+---
+
+## 결과 화면 구성
+
+- 추천 결과마다 `적합도`와 `확신도`를 따로 보여줍니다.
+- `보유 역량`과 `부족 역량`이 태그 형태로 정리됩니다.
+- 핵심 미이수 과목과 보완 추천 과목을 한 번에 볼 수 있습니다.
+- 특정 과목 성적이 낮으면 경고 문구와 재수강 권장 메시지가 함께 표시됩니다.
+- 계획 화면에서는 학기별 추천 과목, 남은 학점 안내, 이월된 과목까지 확인할 수 있습니다.
+
+---
+
+## 기술 스택
+
+- Next.js 16 App Router
+- React 19
+- TypeScript
+- Tailwind CSS 4
+- Zod
+- OpenAI API (선택적 사용)
+
+구조는 대략 이렇게 나뉩니다.
+
+```text
+app/
+  page.tsx                  홈 랜딩
+  recommend/page.tsx        입력 화면
+  recommend/result/page.tsx 추천 결과 화면
+  recommend/plan/page.tsx   학기 계획 화면
+  api/recommend/route.ts    진로 추천 API
+  api/plan/route.ts         학기 계획 API
+  api/explain/route.ts      AI 해설 API
+
+components/
+  IntakeForm.tsx
+  ResultCard.tsx
+  PlanSetupPanel.tsx
+  SemesterPlanPanel.tsx
+  RoadmapPanel.tsx
+
+lib/
+  recommendation.ts
+  planning.ts
+  scoring.ts
+  llm.ts
+  sample-data.ts
+  course-visibility.ts
+  grade-policy.ts
+  types.ts
 ```
-Next.js App Router (TypeScript + Tailwind CSS)
-
-/app
-  page.tsx                  # 홈 랜딩
-  /recommend/page.tsx       # 추천 입력 화면
-  /api/recommend/route.ts   # POST — 규칙 기반 진로 추천
-  /api/plan/route.ts        # POST — 선택 진로 기준 1~2개 학기 계획
-  /api/explain/route.ts     # POST — LLM 진로 해설 (OpenAI or fallback)
-
-/lib
-  types.ts                  # 공유 타입 정의
-  sample-data.ts            # 과목·진로·데모 프로필 데이터
-  scoring.ts                # 점수 계산 순수 함수
-  recommendation.ts         # 추천 로직 (scoring 활용)
-  planning.ts               # 학기별 계획 생성 규칙
-  llm.ts                    # OpenAI 호출 + fallback 생성
-
-/components
-  IntakeForm.tsx            # 입력 폼 (select + 체크박스 + 데모 버튼)
-  ResultCard.tsx            # 추천 결과 카드
-  PlanSetupPanel.tsx        # 계획 옵션 패널
-  SemesterPlanPanel.tsx     # 학기별 계획 결과 패널
-  RoadmapPanel.tsx          # AI 해설 + 로드맵 패널
-```
-
-추천과 계획 로직은 LLM에 의존하지 않는다. 점수 계산은 필수 역량 커버리지, 선택 역량 상한, 전공 적합도, low-evidence penalty를 반영한 보수적 규칙으로 처리하고, LLM은 결과 설명 문장 생성에만 사용한다.
 
 ---
 
 ## 실행 방법
 
 ```bash
-# 1. 의존성 설치
 npm install
-
-# 2. 환경변수 설정 (선택)
 cp .env.example .env.local
-# .env.local 파일에 OPENAI_API_KEY 입력
-
-# 3. 개발 서버 실행
 npm run dev
-# http://localhost:3000 접속
 ```
 
----
+브라우저에서 `http://localhost:3000`으로 접속하면 됩니다.
 
-## 환경변수
+### 환경변수
 
 | 변수명 | 필수 여부 | 설명 |
-|---|---|---|
-| `OPENAI_API_KEY` | 선택 | 없으면 규칙 기반 fallback 설명이 자동 제공됨 |
-
-> API 키는 절대 커밋하지 않는다. `.env.local`은 `.gitignore`에 포함되어 있다.
+| --- | --- | --- |
+| `OPENAI_API_KEY` | 선택 | AI 해설 품질 향상용. 없어도 서비스는 fallback 설명으로 동작 |
 
 ---
 
-## 데모 시나리오
+## 데모 프로필
 
-서비스를 실행하면 `/recommend` 화면 상단에 빠른 데모 프로필 버튼 3개가 있다.
+`/recommend` 화면에는 데모 프로필이 준비되어 있습니다.
 
-| 버튼 | 프로필 | 기대 1위 진로 |
-|---|---|---|
-| A — PM 지향 | 2024학번, 컴공+경영, 비즈니스·전략 과목 수강 | 프로덕트 매니저 |
-| B — 백엔드 지향 | 2023학번, 컴공, 프로그래밍·알고리즘·시스템 과목 수강 | 백엔드 개발자 |
-| C — 데이터 지향 | 2024학번, 컴공+경영, 데이터·통계·알고리즘 과목 수강 | 데이터 분석가 |
+| 프로필 | 설명 | 기대 추천 |
+| --- | --- | --- |
+| A | 컴공 + 경영 조합, 비즈니스/전략 성향 | 프로덕트 매니저 |
+| B | 컴공 중심, 프로그래밍/시스템 과목 이수 | 백엔드 개발자 |
+| C | 컴공 + 경영 조합, 데이터/통계 성향 | 데이터 분석가 |
 
-상세 클릭 흐름은 [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md)를 참고한다.
+상세 시나리오와 점검 기준은 아래 문서를 참고할 수 있습니다.
 
-임시 외부 공유 시 Cloudflare tunnel 테스트 절차는 [docs/TUNNEL_TEST.md](docs/TUNNEL_TEST.md)를 참고한다.
+- [데모 스크립트](docs/DEMO_SCRIPT.md)
+- [QA 시나리오](docs/QA_SCENARIOS.md)
+- [최종 체크리스트](docs/FINAL_CHECKLIST.md)
 
 ---
 
-## 프로젝트 구조 참고 문서
+## 요약
 
-| 문서 | 내용 |
-|---|---|
-| [docs/README.md](docs/README.md) | 현재 문서 묶음의 역할 안내 |
-| [docs/PLAN.md](docs/PLAN.md) | 문제 정의 및 해결 방향 |
-| [docs/PROJECT_SCOPE.md](docs/PROJECT_SCOPE.md) | MVP 범위와 제외 범위 |
-| [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md) | 현재 추천 흐름 기준 클릭 시나리오 |
-| [docs/DEMO_BLOCKERS.md](docs/DEMO_BLOCKERS.md) | 현재 데모 리스크 및 정리 기준 |
-| [docs/QA_SCENARIOS.md](docs/QA_SCENARIOS.md) | 내부 추천 QA 시나리오 |
-| [docs/PROD_QA.md](docs/PROD_QA.md) | live URL 최종 수동 점검 문서 |
-| [docs/FINAL_CHECKLIST.md](docs/FINAL_CHECKLIST.md) | 제출 직전 체크리스트 |
-| [docs/SUBMISSION_GUIDE.md](docs/SUBMISSION_GUIDE.md) | public repo / live URL / 제출물 정리 |
-| [docs/AI_REPORT_DRAFT.md](docs/AI_REPORT_DRAFT.md) | AI report PDF 원문 초안 |
-| [docs/JUDGE_ONE_PAGER.md](docs/JUDGE_ONE_PAGER.md) | 심사용 1페이지 요약 |
-| [docs/GIT_WORKFLOW.md](docs/GIT_WORKFLOW.md) | 브랜치 전략 및 협업 규칙 |
-| [docs/AI_COLLAB.md](docs/AI_COLLAB.md) | AI 협업 기록 |
-| [docs/PROMPT_LOG_TEMPLATE.md](docs/PROMPT_LOG_TEMPLATE.md) | 프롬프트 로그 양식 |
+MajorMap AI는 수강 이력 기반 진로 추천과 다음 학기 계획 생성을 연결한 규칙 기반 진로 설계 MVP입니다.
