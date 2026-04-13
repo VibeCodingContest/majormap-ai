@@ -8,9 +8,10 @@
 
 | 항목 | 상태 |
 |---|---|
-| `npm run lint` | 통과 |
+| `npm run lint` | 미통과 |
 | `npm run build` | 통과 |
 | 추천 API | 존재 |
+| 계획 API | 존재 |
 | explain API | 존재 |
 | explain fallback | 존재 |
 
@@ -18,9 +19,11 @@
 
 ## 현재 치명적 블로커
 
-없음.
+- lint 미통과
+- `react-hooks/set-state-in-effect` 규칙 위반이 `app/recommend/plan/page.tsx`, `components/IntakeForm.tsx`에 존재
+- `app/recommend/result/page.tsx`에 unused variable warning이 존재
 
-현재 기준에서는 추천 흐름과 explain fallback이 제출용 데모를 막는 수준의 치명적 오류는 확인되지 않았다.
+다만 이는 빌드 자체를 막는 문제는 아니며, 현재 기준에서는 추천 흐름, 계획 흐름, explain fallback이 데모를 막는 수준의 런타임 치명 오류로 확인되지는 않았다.
 
 ---
 
@@ -34,4 +37,4 @@
 
 ## 결론
 
-현재 canonical repo 기준으로는 제출 준비를 계속 진행할 수 있는 상태다. 남은 확인은 배포 환경과 제출물 정리다.
+현재 기준으로 데모 진행은 가능하지만, 제출 완성도를 높이려면 lint 오류 정리 후 배포 환경과 제출물 점검을 이어가는 것이 좋다.
