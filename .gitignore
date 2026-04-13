@@ -45,3 +45,11 @@ next-env.d.ts
 .cloudflared-3000*.log
 .start-3000*.log
 review-artifacts/
+
+# OpenNext
+.open-next
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
